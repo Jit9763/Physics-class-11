@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gati ke Prakar</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <a href="index.html">परिभाषा (Home)</a>
+        <a href="types.html">गति के प्रकार (Types)</a>
+    </nav>
+
+    <div class="container">
+        <h1>एक-समान vs असमान गति</h1>
+        
+        <div class="definition-box">
+            <p><b>1. एक-समान गति:</b> यदि वस्तु बराबर समय में बराबर दूरी तय करे।</p>
+            <p><b>2. असमान गति:</b> यदि वस्तु की गति समय के साथ बदले (Acceleration)।</p>
+        </div>
+
+        <div class="simulator-card">
+            <div class="canvas-container">
+                <canvas id="typeCanvas"></canvas>
+            </div>
+            
+            <div class="dashboard">
+                <div class="stat"><b>Car 1 (Uniform):</b> <span id="s1">0</span> m/s</div>
+                <div class="stat"><b>Car 2 (Non-Uni):</b> <span id="s2">0</span> m/s</div>
+            </div>
+
+            <button id="accelBtn" style="width:100%; padding:15px; background:#27ae60; color:white; border:none; border-radius:5px;">
+                Accelerate Car 2 (त्वरण बढ़ाएं)
+            </button>
+        </div>
+    </div>
+
+    <script src="types.js"></script>
+</body>
+</html>

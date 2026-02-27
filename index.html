@@ -3,67 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gati ki Paribhasha - Physics</title>
+    <title>Physics Class 11 - Learning Portal</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Horizontal Menu scrollable on mobile */
+        nav { display: flex; overflow-x: auto; white-space: nowrap; gap: 10px; padding: 10px; background: #2c3e50; }
+        nav button { background: #34495e; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        nav button.active { background: #3498db; }
+        .hidden { display: none; }
+    </style>
 </head>
 <body>
 
-<!-- Navigation Bar -->
-<nav>
-    <a href="index.html" class="active">गति की परिभाषा (Home)</a>
-    <a href="types.html">गति के प्रकार (Types)</a>
+<nav id="chapterMenu">
+    <!-- Buttons yahan apne aap JS se judenge -->
 </nav>
 
-<div class="container">
-    <h1>गति (Motion) की परिभाषा</h1>
+<div class="container" id="mainContent">
+    <h1 id="chTitle">Loading...</h1>
+    <div class="definition-box" id="chDef"></div>
     
-    <div class="definition-box">
-        <p>"यदि कोई वस्तु समय के साथ अपनी स्थिति (position) बदलती है, तो उसे <b>गति (Motion)</b> में कहा जाता है।"</p>
-    </div>
-
     <div class="simulator-card">
-        <h3>Motion Simulator</h3>
-        
-        <!-- Simulation Area -->
-        <div class="canvas-container">
-            <canvas id="simCanvas"></canvas>
-        </div>
-
-        <!-- Live Dashboard (Speed & Distance) -->
-        <div class="dashboard">
-            <div class="stat"><b>Car:</b> <span id="dist1">0</span>m | <span id="val1">0</span> m/s</div>
-            <div class="stat"><b>Ball:</b> <span id="dist2">0</span>m | <span id="val2">0</span> m/s</div>
-        </div>
-
-        <!-- Controls Area -->
-        <div class="controls">
-            <div class="control-group">
-                <label>Object 1 (Car) Speed:</label>
-                <input type="range" id="speed1" min="0" max="10" value="2">
-            </div>
-            
-            <div class="control-group">
-                <label>Object 2 (Ball) Speed:</label>
-                <input type="range" id="speed2" min="0" max="10" value="5">
-            </div>
-
-            <!-- Acceleration Button -->
-            <div class="control-group" style="margin-top: 15px;">
-                <button id="accelBtn" style="background: #27ae60; width: 100%; color: white; border:none; padding:12px; border-radius:5px; font-weight:bold; cursor:pointer;">
-                    Apply Acceleration (त्वरण बढ़ाएं)
-                </button>
-            </div>
-
-            <!-- Reset Button -->
-            <button id="resetBtn" style="width: 100%; margin-top:10px; padding:10px; background:#e74c3c; color:white; border:none; border-radius:5px; cursor:pointer;">
-                Reset Position
-            </button>
-        </div>
+        <canvas id="mainCanvas"></canvas>
+        <div id="chDashboard" class="dashboard"></div>
+        <div id="chControls" class="controls"></div>
     </div>
 </div>
 
-<!-- JavaScript Link -->
 <script src="sim.js"></script>
-
 </body>
 </html>

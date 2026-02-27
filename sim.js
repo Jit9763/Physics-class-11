@@ -1,73 +1,85 @@
-const canvas = document.getElementById('simCanvas');
+// ==========================================
+// SECTION 1: ENGINE LOGIC (Isse mat chedna)
+// ==========================================
+const canvas = document.getElementById('mainCanvas');
 const ctx = canvas.getContext('2d');
+let currentChapter = null;
 
-// Elements
-const speed1Input = document.getElementById('speed1');
-const speed2Input = document.getElementById('speed2');
-const dist1Disp = document.getElementById('dist1');
-const dist2Disp = document.getElementById('dist2');
-const val1Disp = document.getElementById('val1');
-const val2Disp = document.getElementById('val2');
-const resetBtn = document.getElementById('resetBtn');
-const accelBtn = document.getElementById('accelBtn');
+const chapters = {}; // Yahan saare chapters save honge
 
-let obj1 = { x: 0, y: 50, size: 40, color: '#e74c3c', distance: 0, v: 0 };
-let obj2 = { x: 0, y: 130, size: 20, color: '#f1c40f', distance: 0, v: 0 };
-let isAccelerating = false;
-
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Roads
-    ctx.strokeStyle = '#555';
-    ctx.beginPath(); ctx.moveTo(0, 85); ctx.lineTo(canvas.width, 85); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, 165); ctx.lineTo(canvas.width, 165); ctx.stroke();
-
-    // Draw Car & Ball
-    ctx.fillStyle = obj1.color; ctx.fillRect(obj1.x, obj1.y, obj1.size, 25);
-    ctx.fillStyle = obj2.color; ctx.beginPath();
-    ctx.arc(obj2.x, obj2.y, obj2.size / 2, 0, Math.PI * 2); ctx.fill();
-
-    update();
-    requestAnimationFrame(draw);
+function addChapter(id, data) {
+    chapters[id] = data;
+    const btn = document.createElement('button');
+    btn.innerText = data.menuName;
+    btn.onclick = () => loadChapter(id);
+    document.getElementById('chapterMenu').appendChild(btn);
 }
 
-function update() {
-    // Basic scaling factor (0.1) taaki speed control mein rahe
-    let s1 = parseFloat(speed1Input.value) * 0.1;
-    let s2 = parseFloat(speed2Input.value) * 0.1;
+function loadChapter(id) {
+    currentChapter = chapters[id];
+    document.getElementById('chTitle').innerText = currentChapter.title;
+    document.getElementById('chDef').innerHTML = `<p>${currentChapter.def}</p>`;
+    document.getElementById('chDashboard').innerHTML = currentChapter.dashboardHTML || '';
+    document.getElementById('chControls').innerHTML = currentChapter.controlsHTML || '';
+    
+    // Canvas Reset
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = 250;
+    
+    if(currentChapter.init) currentChapter.init();
+}
 
-    // Agar Acceleration button daba hai toh speed dheere badhao
-    if (isAccelerating) {
-        speed1Input.value = parseFloat(speed1Input.value) + 0.02;
-        speed2Input.value = parseFloat(speed2Input.value) + 0.01;
+function animate() {
+    if(currentChapter && currentChapter.draw) {
+        currentChapter.draw();
     }
-
-    // Position & Meter updates
-    obj1.x += s1;
-    obj1.distance += s1 * 0.05;
-    obj2.x += s2;
-    obj2.distance += s2 * 0.05;
-
-    dist1Disp.innerText = obj1.distance.toFixed(2);
-    dist2Disp.innerText = obj2.distance.toFixed(2);
-    val1Disp.innerText = (s1 * 10).toFixed(1);
-    val2Disp.innerText = (s2 * 10).toFixed(1);
-
-    if (obj1.x > canvas.width) obj1.x = -obj1.size;
-    if (obj2.x > canvas.width) obj2.x = -obj2.size;
+    requestAnimationFrame(animate);
 }
+animate();
 
-accelBtn.addEventListener('mousedown', () => isAccelerating = true);
-accelBtn.addEventListener('mouseup', () => isAccelerating = false);
-// Mobile touch ke liye
-accelBtn.addEventListener('touchstart', () => isAccelerating = true);
-accelBtn.addEventListener('touchend', () => isAccelerating = false);
+// ==========================================
+// SECTION 2: CHAPTERS DATA (Yahan Naya Code Paste Karein)
+// ==========================================
 
-resetBtn.addEventListener('click', () => {
-    obj1.x = 0; obj1.distance = 0;
-    obj2.x = 0; obj2.distance = 0;
-    speed1Input.value = 2; speed2Input.value = 5;
+// --- CHAPTER 1: GATI (MOTION) ---
+addChapter('motion', {
+    menuName: "गति (Motion)",
+    title: "गति की परिभाषा",
+    def: "यदि कोई वस्तु समय के साथ स्थिति बदले तो उसे गति में कहा जाता है।",
+    controlsHTML: `<button onclick="chapters.motion.reset()">Reset</button>`,
+    x: 0,
+    init: function() { this.x = 0; },
+    draw: function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "red";
+        ctx.fillRect(this.x, 100, 40, 20);
+        this.x += 2;
+        if(this.x > canvas.width) this.x = -40;
+    },
+    reset: function() { this.x = 0; }
 });
 
-draw();
+// --- CHAPTER 2: PROJECTILE (PRASHEP) ---
+addChapter('projectile', {
+    menuName: "प्रक्षेप्य (Projectile)",
+    title: "प्रक्षेप्य गति",
+    def: "जब किसी पिंड को किसी कोण पर फेंका जाता है (Parabola path)।",
+    controlsHTML: `<button onclick="chapters.projectile.fire()">Fire Ball</button>`,
+    ball: { x: 0, y: 200, vx: 0, vy: 0, active: false },
+    init: function() { this.ball.active = false; },
+    fire: function() {
+        this.ball = { x: 0, y: 200, vx: 5, vy: -8, active: true };
+    },
+    draw: function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "green"; ctx.fillRect(0, 200, canvas.width, 50); // Ground
+        ctx.fillStyle = "blue";
+        ctx.beginPath(); ctx.arc(this.ball.x, this.ball.y, 8, 0, Math.PI*2); ctx.fill();
+        if(this.ball.active) {
+            this.ball.x += this.ball.vx; this.ball.vy += 0.2; this.ball.y += this.ball.vy;
+            if(this.ball.y > 200) this.ball.active = false;
+        }
+    }
+});
+
+// AB AGLE CHAPTER KE LIYE BAS NICHE NAYA 'addChapter' PASTE KARTE JAIYE...

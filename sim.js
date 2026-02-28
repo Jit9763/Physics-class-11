@@ -472,10 +472,10 @@ ChapterRegistry.register(
           <label>Time: <span id="distTimer">0.00</span> s</label>
         </div>
         <div style="min-width:160px">
-          <label>Distance (path): <span id="distPath">0.00</span> px</label>
+          <label>Distance (path): <span id="distPath">0.00</span> meter</label>
         </div>
         <div style="min-width:160px">
-          <label>Displacement: <span id="distDisp">0.00</span> px</label>
+          <label>Displacement: <span id="distDisp">0.00</span> meter</label>
         </div>
       </div>
     `;

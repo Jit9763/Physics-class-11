@@ -1,85 +1,92 @@
-// ==========================================
-// SECTION 1: ENGINE LOGIC (Isse mat chedna)
-// ==========================================
-const canvas = document.getElementById('mainCanvas');
-const ctx = canvas.getContext('2d');
-let currentChapter = null;
+// Google Sheet (published as Excel file with multiple sheets)
+const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSdWuvZY7JkL6I6Cs0abRuGVfB1gitMGIDtb2z3M4ZKLVAlf2l8r8uGxaDkMIOnVC2E40z1sNqHV0w/pub?output=xlsx";
 
-const chapters = {}; // Yahan saare chapters save honge
+// Load workbook
+async function loadWorkbook() {
+    const response = await fetch(sheetURL);
+    const data = await response.arrayBuffer();
+    const workbook = XLSX.read(data, {type:"array"});
 
-function addChapter(id, data) {
-    chapters[id] = data;
-    const btn = document.createElement('button');
-    btn.innerText = data.menuName;
-    btn.onclick = () => loadChapter(id);
-    document.getElementById('chapterMenu').appendChild(btn);
+    // हर sheet के लिए nav button बनाओ
+    const menu = document.getElementById("chapterMenu");
+    workbook.SheetNames.forEach(sheetName => {
+        const btn = document.createElement("button");
+        btn.textContent = sheetName;
+        btn.onclick = () => loadSheet(workbook, sheetName);
+        menu.appendChild(btn);
+    });
+
+    // Default: पहला sheet load करो
+    loadSheet(workbook, workbook.SheetNames[0]);
 }
 
-function loadChapter(id) {
-    currentChapter = chapters[id];
-    document.getElementById('chTitle').innerText = currentChapter.title;
-    document.getElementById('chDef').innerHTML = `<p>${currentChapter.def}</p>`;
-    document.getElementById('chDashboard').innerHTML = currentChapter.dashboardHTML || '';
-    document.getElementById('chControls').innerHTML = currentChapter.controlsHTML || '';
-    
-    // Canvas Reset
-    canvas.width = canvas.parentElement.clientWidth;
-    canvas.height = 250;
-    
-    if(currentChapter.init) currentChapter.init();
+// Load one sheet
+function loadSheet(workbook, sheetName) {
+    const sheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
+
+    const title = rows[0][0];
+    const definition = rows[1][0];
+    const notes = rows.slice(2).map(r => r[0]);
+
+    document.getElementById("chTitle").textContent = title;
+    document.getElementById("chDef").textContent = definition;
+    document.getElementById("chNotes").innerHTML = notes.join("<br>");
+
+    // Active button highlight
+    const menu = document.getElementById("chapterMenu");
+    [...menu.children].forEach(b => b.classList.remove("active"));
+    [...menu.children].find(b => b.textContent === sheetName).classList.add("active");
+
+    // Simulator dispatcher (sheetName के आधार पर)
+    if (sheetName.toLowerCase().includes("motion")) simulateMotion();
+    else simulatePlaceholder(sheetName);
 }
 
-function animate() {
-    if(currentChapter && currentChapter.draw) {
-        currentChapter.draw();
-    }
-    requestAnimationFrame(animate);
+// Notes download
+function downloadNotes() {
+    const notes = document.getElementById("chNotes").innerText;
+    const blob = new Blob([notes], { type: "text/plain" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "Notes.txt";
+    link.click();
 }
-animate();
 
-// ==========================================
-// SECTION 2: CHAPTERS DATA (Yahan Naya Code Paste Karein)
-// ==========================================
+// Simulator: Motion
+function simulateMotion() {
+    const canvas = document.getElementById("mainCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = 500; canvas.height = 300;
 
-// --- CHAPTER 1: GATI (MOTION) ---
-addChapter('motion', {
-    menuName: "गति (Motion)",
-    title: "गति की परिभाषा",
-    def: "यदि कोई वस्तु समय के साथ स्थिति बदले तो उसे गति में कहा जाता है।",
-    controlsHTML: `<button onclick="chapters.motion.reset()">Reset</button>`,
-    x: 0,
-    init: function() { this.x = 0; },
-    draw: function() {
+    let velocity = 5;
+    let x = 20;
+
+    function animate(t) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "red";
-        ctx.fillRect(this.x, 100, 40, 20);
-        this.x += 2;
-        if(this.x > canvas.width) this.x = -40;
-    },
-    reset: function() { this.x = 0; }
-});
-
-// --- CHAPTER 2: PROJECTILE (PRASHEP) ---
-addChapter('projectile', {
-    menuName: "प्रक्षेप्य (Projectile)",
-    title: "प्रक्षेप्य गति",
-    def: "जब किसी पिंड को किसी कोण पर फेंका जाता है (Parabola path)।",
-    controlsHTML: `<button onclick="chapters.projectile.fire()">Fire Ball</button>`,
-    ball: { x: 0, y: 200, vx: 0, vy: 0, active: false },
-    init: function() { this.ball.active = false; },
-    fire: function() {
-        this.ball = { x: 0, y: 200, vx: 5, vy: -8, active: true };
-    },
-    draw: function() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "green"; ctx.fillRect(0, 200, canvas.width, 50); // Ground
         ctx.fillStyle = "blue";
-        ctx.beginPath(); ctx.arc(this.ball.x, this.ball.y, 8, 0, Math.PI*2); ctx.fill();
-        if(this.ball.active) {
-            this.ball.x += this.ball.vx; this.ball.vy += 0.2; this.ball.y += this.ball.vy;
-            if(this.ball.y > 200) this.ball.active = false;
-        }
-    }
-});
+        ctx.fillRect(x, 150, 40, 40);
 
-// AB AGLE CHAPTER KE LIYE BAS NICHE NAYA 'addChapter' PASTE KARTE JAIYE...
+        x = 20 + velocity * (t/30);
+        if (x < canvas.width - 50) requestAnimationFrame(() => animate(t+1));
+    }
+    animate(0);
+
+    document.getElementById("chDashboard").innerHTML = `
+        <p>Velocity: ${velocity} m/s</p>
+        <p>Displacement: ${velocity * 5} m</p>
+    `;
+}
+
+// Simulator: Placeholder for other topics
+function simulatePlaceholder(name) {
+    const canvas = document.getElementById("mainCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = 500; canvas.height = 300;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillText(`${name} Simulation Placeholder`, 150, 150);
+    document.getElementById("chDashboard").innerHTML = `<p>Simulation for ${name} coming soon...</p>`;
+}
+
+// Start
+loadWorkbook();

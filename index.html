@@ -5,29 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Physics Class 11 - Learning Portal</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        /* Scrollable horizontal menu */
-        nav { display: flex; overflow-x: auto; white-space: nowrap; gap: 10px; padding: 10px; background: #2c3e50; }
-        nav button { background: #34495e; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
-        nav button.active { background: #3498db; }
-        .hidden { display: none; }
-
-        body { font-family: Arial, sans-serif; margin: 0; background: #f4f6f8; }
-        .container { padding: 20px; }
-        .definition-box { background: #ecf0f1; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .simulator-card { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        canvas { border: 1px solid #ccc; display: block; margin: 10px auto; }
-        .dashboard { margin-top: 10px; background: #f9f9f9; padding: 10px; border-radius: 5px; }
-        .controls { margin-top: 10px; }
-        .notes-box { margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    </style>
+    <!-- SheetJS library for Excel/Google Sheets -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
     <!-- Navigation Menu -->
-    <nav id="chapterMenu">
-        <!-- Buttons JS से जुड़ेंगे -->
-    </nav>
+    <nav id="chapterMenu"></nav>
 
     <!-- Main Content -->
     <div class="container" id="mainContent">

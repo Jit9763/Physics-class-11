@@ -509,14 +509,14 @@ ChapterRegistry.register(
     // draw axes function
     function drawAxes(){
       ctx.save();
-      ctx.strokeStyle = "#ddd";
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = "#060a71";
+      ctx.lineWidth = 4;
       // x axis
       ctx.beginPath(); ctx.moveTo(40,280); ctx.lineTo(canvas.width-20,280); ctx.stroke();
       // y axis
       ctx.beginPath(); ctx.moveTo(40,20); ctx.lineTo(40,300); ctx.stroke();
       // ticks
-      ctx.fillStyle = "#999"; ctx.font = "11px Arial";
+      ctx.fillStyle = "#080101"; ctx.font = "11px Arial";
       for (let x=80;x<=640;x+=40){
         ctx.beginPath(); ctx.moveTo(x,276); ctx.lineTo(x,284); ctx.stroke();
         ctx.fillText((x-40).toString(), x-6, 300);
@@ -637,8 +637,8 @@ ChapterRegistry.register(
       ctx.beginPath(); ctx.arc(cur.x, cur.y, 8, 0, Math.PI*2); ctx.fill();
 
       // small labels
-      ctx.fillStyle = "#333"; ctx.font = "12px Arial";
-      ctx.fillText("Start", start.x - 20, start.y + 20);
+      ctx.fillStyle = "#850707"; ctx.font = "bold 14px Arial";
+      ctx.fillText("Start", start.x - 20, start.y - 30);
       ctx.fillText("Current", cur.x + 10, cur.y - 10);
     }
 

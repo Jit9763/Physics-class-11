@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Physics Class 11 - Learning Portal</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+  .topic-card { border: 2px solid #3498db; margin: 20px auto; padding: 20px; border-radius: 12px; max-width: 800px; font-family: sans-serif; background: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+  .notes-area { background: #f4f4f4; padding: 15px; border-left: 5px solid #3498db; margin: 15px 0; min-height: 50px; }
+  .sim-btn { background: #27ae60; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; font-weight: bold; }
+  .sim-btn:hover { background: #219150; }
+  iframe { width: 100%; height: 500px; border: 2px solid #2c3e50; margin-top: 15px; border-radius: 8px; display: none; }
+</style>
     <!-- SheetJS library for Excel/Google Sheets -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
@@ -34,5 +41,77 @@
     </div>
 
     <script src="sim.js"></script>
+
+<!-- Har naye topic ke liye sirf ye DIV copy karein -->
+<div class="topic-card" 
+     id="topic_1" 
+     data-sheet="Sheet5" 
+     data-range="A1:A10" 
+     data-sim="https://phet.colorado.edu">
+    
+    <h2 class="title">Loading...</h2>
+    <div class="notes-area">Please wait, loading physics notes...</div>
+    <button class="sim-btn" onclick="activateSim('topic_1')">Launch Simulator</button>
+    <div class="sim-placeholder"></div>
+</div>
+
+<script>
+const MY_SHEET_ID = '17gFKRFliEKwgs8AD6C_mLPl32DCqoXLvqYQ7-Bcywdo';
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const el = entry.target;
+            const sheet = el.getAttribute('data-sheet');
+            const range = el.getAttribute('data-range');
+            const url = `https://docs.google.com/spreadsheets/d/${MY_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${sheet}&range=${range}`;
+
+            fetch(url)
+                .then(res => res.text())
+                .then(data => {
+                    try {
+                        // Clean response: remove wrapper and comment
+                        const jsonStr = data
+                            .replace(/^[\s\S]*setResponse\(/, '')
+                            .replace(/\);[\s\S]*$/, '');
+                        const json = JSON.parse(jsonStr);
+                        const rows = json.table.rows;
+
+                        // Title
+                        el.querySelector('.title').innerText = rows[0]?.c[0]?.v || "Untitled Topic";
+
+                        // Notes
+                        let notes = "";
+                        for (let i = 1; i < rows.length; i++) {
+                            if (rows[i].c[0]) {
+                                notes += `<p>• ${rows[i].c[0].v}</p>`;
+                            }
+                        }
+                        el.querySelector('.notes-area').innerHTML = notes || "No notes available.";
+                    } catch (err) {
+                        console.error("Parsing error:", err);
+                        el.querySelector('.notes-area').innerHTML = "⚠️ Error loading notes.";
+                    }
+                })
+                .catch(err => {
+                    console.error("Fetch error:", err);
+                    el.querySelector('.notes-area').innerHTML = "⚠️ Unable to fetch data.";
+                });
+
+            observer.unobserve(el);
+        }
+    });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.topic-card').forEach(card => observer.observe(card));
+
+function activateSim(id) {
+    const card = document.getElementById(id);
+    const simUrl = card.getAttribute('data-sim');
+    card.querySelector('.sim-placeholder').innerHTML =
+        `<iframe src="${simUrl}" width="100%" height="500px" style="border:none; margin-top:15px;"></iframe>`;
+    card.querySelector('.sim-btn').style.display = 'none';
+}
+</script>
 </body>
 </html>

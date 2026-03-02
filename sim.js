@@ -224,7 +224,6 @@ function runSheet6Sim() {
   };
 }
 
-
 function runSheet7Sim() {
   const ctx = document.getElementById("sheet7Canvas").getContext("2d");
   ctx.fillText("Simulator for Sheet7 is active.", 50, 150);

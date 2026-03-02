@@ -1,173 +1,74 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Physics Class 11 - Learning Portal</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-  .topic-card { border: 2px solid #3498db; margin: 20px auto; padding: 20px; border-radius: 12px; max-width: 800px; font-family: sans-serif; background: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-  .notes-area { background: #f4f4f4; padding: 15px; border-left: 5px solid #3498db; margin: 15px 0; min-height: 50px; }
-  .sim-btn { background: #27ae60; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; font-weight: bold; }
-  .sim-btn:hover { background: #219150; }
-  iframe { width: 100%; height: 500px; border: 2px solid #2c3e50; margin-top: 15px; border-radius: 8px; display: none; }
-</style>
-    <!-- SheetJS library for Excel/Google Sheets -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <title>Physics Portal</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="simulator.js"></script>
 </head>
 <body>
-
-    <!-- Navigation Menu -->
-    <nav id="chapterMenu"></nav>
-
-    <!-- Main Content -->
-    <div class="container" id="mainContent">
-        <h1 id="chTitle">Loading...</h1>
-        <div class="definition-box" id="chDef"></div>
-
-        <!-- Simulator Section -->
-        <div class="simulator-card">
-            <canvas id="mainCanvas"></canvas>
-            <div id="chDashboard" class="dashboard"></div>
-            <div id="chControls" class="controls"></div>
-        </div>
-
-        <!-- Notes Section -->
-        <div class="notes-box">
-            <h2>Notes</h2>
-            <div id="chNotes"></div>
-            <button onclick="downloadNotes()">Download Notes</button>
-        </div>
-    </div>
-
-    <script src="sim.js"></script>
-
-<!-- Har naye topic ke liye sirf ye DIV copy karein -->
-
-  <div id="topics-container"></div>
+    <div id="header" style="background: #333; color: white; padding: 20px; text-align: center;">
+        <h1>Physics Class 11 - Learning Portal "Motion"</h1></div>
+  <div id="topics-container" style="padding: 30px;"></div>
 
   <script>
   const MY_SHEET_ID = '17gFKRFliEKwgs8AD6C_mLPl32DCqoXLvqYQ7-Bcywdo';
 
-  // Registry: bas sheet name aur range add karo
+  // Registry: bas sheet1, sheet2, sheet3 add karo
   const topicsRegistry = [
-    { sheet: "Distance", range: "A1:A10" },
-    { sheet: "Sheet5", range: "A1:A12" },
-    { sheet: "Motion", range: "A1:A15" },
-    { sheet: "Sheet6", range: "A1:A15" }
+    { sheet: "Sheet1", range: "A1:A10" },
+    { sheet: "Sheet2", range: "A1:A12" },
+    { sheet: "Sheet5", range: "A1:A15" }
   ];
 
-  // Generate topic cards dynamically
+  // Cards auto-generate
   const container = document.getElementById("topics-container");
   topicsRegistry.forEach(t => {
-    const id = "topic_" + t.sheet.toLowerCase(); // id sheet name se banega
     container.innerHTML += `
-      <div class="topic-card" id="${id}" data-sheet="${t.sheet}" data-range="${t.range}" data-sim-id="${t.sheet.toLowerCase()}">
+      <div class="topic-card" id="${t.sheet}" data-sheet="${t.sheet}" data-range="${t.range}" data-sim-id="${t.sheet}">
         <h2 class="title">Loading...</h2>
-        <div class="notes-area">Please wait, loading physics notes...</div>
-        <button class="sim-btn" onclick="activateSim('${id}')">Launch Simulator</button>
+        <div class="notes-area">Loading notes...</div>
+        <button class="sim-btn" onclick="activateSim('${t.sheet}')">Launch Simulator</button>
         <div class="sim-placeholder"></div>
       </div>
     `;
   });
 
-  // IntersectionObserver for lazy loading notes
+  // Notes loader
   const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-          if (entry.isIntersecting) {
-              const el = entry.target;
-              const sheet = el.getAttribute('data-sheet');
-              const range = el.getAttribute('data-range');
-              const url = `https://docs.google.com/spreadsheets/d/${MY_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${sheet}&range=${range}`;
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        const sheet = el.getAttribute('data-sheet');
+        const range = el.getAttribute('data-range');
+        const url = `https://docs.google.com/spreadsheets/d/${MY_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${sheet}&range=${range}`;
 
-              fetch(url)
-                  .then(res => res.text())
-                  .then(data => {
-                      try {
-                          const jsonStr = data
-                              .replace(/^[\s\S]*setResponse\(/, '')
-                              .replace(/\);[\s\S]*$/, '');
-                          const json = JSON.parse(jsonStr);
-                          const rows = json.table.rows;
+        fetch(url)
+          .then(res => res.text())
+          .then(data => {
+            const jsonStr = data.replace(/^[\s\S]*setResponse\(/, '').replace(/\);[\s\S]*$/, '');
+            const json = JSON.parse(jsonStr);
+            const rows = json.table.rows;
 
-                          el.querySelector('.title').innerText = rows[0]?.c[0]?.v || sheet;
+            el.querySelector('.title').innerText = rows[0]?.c[0]?.v || sheet;
 
-                          let notes = "";
-                          for (let i = 1; i < rows.length; i++) {
-                              if (rows[i].c[0]) {
-                                  notes += `<p>• ${rows[i].c[0].v}</p>`;
-                              }
-                          }
-                          el.querySelector('.notes-area').innerHTML = notes || "No notes available.";
-                      } catch (err) {
-                          console.error("Parsing error:", err);
-                          el.querySelector('.notes-area').innerHTML = "⚠️ Error loading notes.";
-                      }
-                  })
-                  .catch(err => {
-                      console.error("Fetch error:", err);
-                      el.querySelector('.notes-area').innerHTML = "⚠️ Unable to fetch data.";
-                  });
+            let notes = "";
+            for (let i = 1; i < rows.length; i++) {
+              if (rows[i].c[0]) notes += `<p>• ${rows[i].c[0].v}</p>`;
+            }
+            el.querySelector('.notes-area').innerHTML = notes || "No notes available.";
+          })
+          .catch(err => {
+            console.error(err);
+            el.querySelector('.notes-area').innerHTML = "⚠️ Error loading notes.";
+          });
 
-              observer.unobserve(el);
-          }
-      });
+        observer.unobserve(el);
+      }
+    });
   }, { threshold: 0.1 });
 
   document.querySelectorAll('.topic-card').forEach(card => observer.observe(card));
-
-  // Simulator activation: ek hi JS file se sab handle hoga
-  function activateSim(id) {
-      const card = document.getElementById(id);
-      const simId = card.getAttribute('data-sim-id');
-      const placeholder = card.querySelector('.sim-placeholder');
-
-      switch(simId) {
-          case "distance":
-              placeholder.innerHTML = `<canvas id="distanceCanvas" width="400" height="300"></canvas>`;
-              runDistanceSim();
-              break;
-
-          case "sheet5": // Example for another topic
-              placeholder.innerHTML = `<canvas id="velocityCanvas" width="400" height="300"></canvas>`;
-              runVelocitySim();
-              break;
-
-          case "sheet6": // Example for another topic
-              placeholder.innerHTML = `<canvas id="accCanvas" width="400" height="300"></canvas>`;
-              runSheet6Sim();
-              break;
-        case "motion": // Example for another topic
-              placeholder.innerHTML = `<canvas id="motionCanvas" width="400" height="300"></canvas>`;
-              runMotionSim();
-              break;
-
-          default:
-              placeholder.innerHTML = "<p>⚠️ Simulator not found.</p>";
-      }
-
-      card.querySelector('.sim-btn').style.display = 'none';
-  }
-
-  // Example simulator functions (sab ek hi file me)
-  function runDistanceSim() {
-      const ctx = document.getElementById("distanceCanvas").getContext("2d");
-      ctx.fillText("Distance simulation running...", 50, 150);
-  }
-
-  function runMotionSim() {
-      const ctx = document.getElementById("motionCanvas").getContext("2d");
-      ctx.fillText("Motion simulation running...", 50, 150);
-  }
-
-  function runAccelerationSim() {
-      const ctx = document.getElementById("accCanvas").getContext("2d");
-      ctx.fillText("Acceleration simulation running...", 50, 150);
-  }
-  function runSheet6Sim() {
-      const ctx = document.getElementById("accCanvas").getContext("2d");
-      ctx.fillText("Acceleration simulation running...", 50, 150);
-  }
   </script>
+  <div id="footer" style="padding: 20px; text-align: center; background: #333; color: white;">© 2025 Physics Class 11 Learning Portal</div>
 </body>
 </html>

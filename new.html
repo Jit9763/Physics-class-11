@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Physics Portal</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="simulator.js"></script>
+</head>
+<body>
+    <div id="header" style="background: #333; color: white; padding: 20px; text-align: center;">
+        <h1>Physics Class 11 - Learning Portal "Motion"</h1></div>
+  <div id="topics-container" style="padding: 30px;"></div>
+
+  <script>
+  const MY_SHEET_ID = '17gFKRFliEKwgs8AD6C_mLPl32DCqoXLvqYQ7-Bcywdo';
+
+  // Registry: bas sheet1, sheet2, sheet3 add karo
+  const topicsRegistry = [
+    { sheet: "Sheet1", range: "A1:A10" },
+    { sheet: "Sheet2", range: "A1:A12" },
+    { sheet: "Sheet5", range: "A1:A15" }
+  ];
+
+  // Cards auto-generate
+  const container = document.getElementById("topics-container");
+  topicsRegistry.forEach(t => {
+    container.innerHTML += `
+      <div class="topic-card" id="${t.sheet}" data-sheet="${t.sheet}" data-range="${t.range}" data-sim-id="${t.sheet}">
+        <h2 class="title">Loading...</h2>
+        <div class="notes-area">Loading notes...</div>
+        <button class="sim-btn" onclick="activateSim('${t.sheet}')">Launch Simulator</button>
+        <div class="sim-placeholder"></div>
+      </div>
+    `;
+  });
+
+  // Notes loader
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        const sheet = el.getAttribute('data-sheet');
+        const range = el.getAttribute('data-range');
+        const url = `https://docs.google.com/spreadsheets/d/${MY_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${sheet}&range=${range}`;
+
+        fetch(url)
+          .then(res => res.text())
+          .then(data => {
+            const jsonStr = data.replace(/^[\s\S]*setResponse\(/, '').replace(/\);[\s\S]*$/, '');
+            const json = JSON.parse(jsonStr);
+            const rows = json.table.rows;
+
+            el.querySelector('.title').innerText = rows[0]?.c[0]?.v || sheet;
+
+            let notes = "";
+            for (let i = 1; i < rows.length; i++) {
+              if (rows[i].c[0]) notes += `<p>• ${rows[i].c[0].v}</p>`;
+            }
+            el.querySelector('.notes-area').innerHTML = notes || "No notes available.";
+          })
+          .catch(err => {
+            console.error(err);
+            el.querySelector('.notes-area').innerHTML = "⚠️ Error loading notes.";
+          });
+
+        observer.unobserve(el);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.topic-card').forEach(card => observer.observe(card));
+  </script>
+  <div id="footer" style="padding: 20px; text-align: center; background: #333; color: white;">© 2025 Physics Class 11 Learning Portal</div>
+</body>
+</html>

@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <title>Physics Simulator — Vector Colors & Thickness Controls</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --bg:#07101a;
+      --panel-bg:rgba(0,0,0,0.60);
+      --muted:#cfcfcf;
+      --bright-red:#ff3b30;
+      --dark-blue:#003366;
+      --bright-yellow:#ffd700;
+      --bright-green:#00e676;
+    }
+    html,body{height:100%;margin:0;font-family:Segoe UI, Roboto, Arial, sans-serif;background:var(--bg);color:#fff;overflow:hidden;}
+    #leftPanel{position:absolute;left:0;top:0;bottom:0;width:40%;padding:14px;box-sizing:border-box;background:var(--panel-bg);overflow-y:auto;z-index:30;}
+    #rightArea{position:absolute;right:0;top:0;bottom:0;left:40%;background:var(--bg);overflow:hidden;}
+    canvas{width:100%;height:100%;display:block;}
+    h2{margin:6px 0 10px 0;font-size:18px;}
+    .section{margin-bottom:14px;padding:10px;background:rgba(255,255,255,0.02);border-radius:8px;}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0;}
+    input[type="number"], input[type="range"]{padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);color:#fff;}
+    input[type="number"]{width:86px;}
+    input[type="range"]{width:160px;}
+    button{padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;cursor:pointer;}
+    button.primary{background:linear-gradient(90deg,var(--bright-yellow),#ffd966);color:#000;border:none;}
+    #labelContainer{position:absolute;left:40%;top:0;right:0;bottom:0;pointer-events:none;z-index:40;}
+    .tickLabel{position:absolute;transform:translate(-50%,-50%);background:rgba(0,0,0,0.28);padding:4px 8px;border-radius:6px;font-size:13px;color:#fff;border:1px solid rgba(255,255,255,0.04);pointer-events:none;text-shadow:0 0 6px rgba(0,0,0,0.9);}
+    .statBox{background:rgba(255,255,255,0.02);padding:8px;border-radius:6px;font-size:13px;color:#fff;}
+    .smallLabel{font-size:13px;color:var(--muted);}
+    @media (max-width:900px){#leftPanel{width:46%;}#rightArea{left:46%;}}
+  </style>
+</head>
+<body>
+  <div id="leftPanel">
+    <h2 id="headerTitle">Physics Simulator</h2>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+      <div class="statBox">Time: <span id="simTime">0.0 s</span></div>
+      <div class="statBox">Distance: <span id="simDistance">0.00</span></div>
+      <div class="statBox">Displacement: <span id="simDisp">0.00</span></div>
+    </div>
+
+    <div class="section">
+      <strong>Ball & Motion</strong>
+      <div class="row" style="margin-top:8px;">
+        <button onclick="setMotion('uniform')" id="btnUniform">Uniform</button>
+        <button onclick="setMotion('nonuniform')" id="btnNonUniform">Non-Uniform</button>
+        <button onclick="setMotion('accelerated')" id="btnAccelerated">Accelerated</button>
+        <button onclick="toggleAnimation()">Pause/Play</button>
+        <button onclick="resetScene()">Reset</button>
+      </div>
+
+      <div style="margin-top:10px;">
+        <div class="row">
+          X: <input id="ballX" type="number" value="0" step="0.1">
+          Y: <input id="ballY" type="number" value="0" step="0.1">
+          Z: <input id="ballZ" type="number" value="0" step="0.1">
+          <button class="primary" onclick="setBallPosition()">Set Ball</button>
+          <button onclick="moveBallToInputs()">Move Smooth</button>
+        </div>
+        <small class="smallLabel">Ball coordinates shown inside the ball (î ĵ k̂).</small>
+      </div>
+    </div>
+
+    <div class="section">
+      <strong>Vectors (î, ĵ, k̂)</strong>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:600">V1 (dark green)</div>
+          <div class="row">
+            X: <input id="v1x" type="number" value="1" step="0.1">
+            Y: <input id="v1y" type="number" value="0" step="0.1">
+            Z: <input id="v1z" type="number" value="0" step="0.1">
+          </div>
+          <div class="row">
+            Thickness: <input id="v1th" type="range" min="1" max="12" value="6"> <input id="v1thNum" type="number" min="1" max="12" value="6" style="width:56px;" onchange="syncRangeFromNumber('v1th','v1thNum')">
+          </div>
+          <div class="row"><button class="primary" onclick="setVectorFromInputs(1)">Set V1</button></div>
+        </div>
+
+        <div>
+          <div style="font-weight:600">V2 (white)</div>
+          <div class="row">
+            X: <input id="v2x" type="number" value="0" step="0.1">
+            Y: <input id="v2y" type="number" value="1" step="0.1">
+            Z: <input id="v2z" type="number" value="0" step="0.1">
+          </div>
+          <div class="row">
+            Thickness: <input id="v2th" type="range" min="1" max="12" value="6"> <input id="v2thNum" type="number" min="1" max="12" value="6" style="width:56px;" onchange="syncRangeFromNumber('v2th','v2thNum')">
+          </div>
+          <div class="row"><button class="primary" onclick="setVectorFromInputs(2)">Set V2</button></div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;" class="row">
+        <button onclick="showResultant()">Show Resultant</button>
+        <button onclick="showDotCross()">Dot & Cross</button>
+        <button onclick="clearVectors()">Clear Vectors</button>
+      </div>
+
+      <div id="vectorInfo" style="margin-top:8px;"></div>
+
+      <div style="margin-top:8px;display:flex;gap:8px;">
+        <div class="statBox">Dot: <span id="dotVal">0.00</span></div>
+        <div class="statBox">Cross Length: <span id="crossLen">0.00</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <strong>Scene Controls</strong>
+      <div class="row">
+        <button onclick="rotateScene('x')">Rotate Grid X</button>
+        <button onclick="rotateScene('y')">Rotate Grid Y</button>
+        <button onclick="rotateScene('z')">Rotate Grid Z</button>
+        <button onclick="centerCamera()">Center Camera</button>
+      </div>
+      <div id="status" style="margin-top:8px;color:var(--muted);">Status: Ready</div>
+    </div>
+  </div>
+
+  <div id="rightArea">
+    <canvas id="canvas"></canvas>
+    <div id="labelContainer"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+  <script>
+  (function(){
+    // Colors
+    const AXIS_COLORS = { x: 0xff3b30, y: 0x00e676, z: 0x0077ff };
+    const GRID_MAJOR_COLOR = 0xff3b30; // horizontal red
+    const GRID_MINOR_COLOR = 0x003366; // vertical dark blue
+
+    // Vector colors requested
+    const V1_COLOR = 0x006400; // dark green
+    const V2_COLOR = 0xffffff; // white
+
+    // Renderer + camera
+    const canvas = document.getElementById('canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x07101a);
+
+    const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1000);
+    camera.position.set(8,8,8);
+    camera.lookAt(0,0,0);
+
+    // Save initial camera + grid state
+    const INITIAL_CAMERA_POS = camera.position.clone();
+    const INITIAL_CAMERA_UP = camera.up.clone();
+    const INITIAL_CAMERA_TARGET = new THREE.Vector3(0,0,0);
+    const INITIAL_GRID_ROT = new THREE.Euler(0,0,0);
+
+    function resizeRenderer() {
+      const rect = document.getElementById('rightArea').getBoundingClientRect();
+      renderer.setSize(rect.width, rect.height, false);
+      camera.aspect = rect.width / rect.height;
+      camera.updateProjectionMatrix();
+      const lc = document.getElementById('labelContainer');
+      lc.style.left = rect.left + 'px';
+      lc.style.top = rect.top + 'px';
+      lc.style.width = rect.width + 'px';
+      lc.style.height = rect.height + 'px';
+    }
+
+    // Groups
+    const gridGroup = new THREE.Group(); scene.add(gridGroup);
+    const projGroup = new THREE.Group(); scene.add(projGroup);
+
+    // Thin grid helper (fallback)
+    const thinGrid = new THREE.GridHelper(10, 10, GRID_MINOR_COLOR, GRID_MINOR_COLOR);
+    thinGrid.rotation.x = Math.PI/2;
+    thinGrid.material.opacity = 1.0;
+    thinGrid.userData.type = 'thinGrid';
+    gridGroup.add(thinGrid);
+
+    // Ball (smaller)
+    const BALL_RADIUS = 0.9;
+    const ballMat = new THREE.MeshPhongMaterial({ color: 0xffcc33, shininess: 80 });
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(BALL_RADIUS, 64, 64), ballMat);
+    ball.position.set(0,0,0);
+    ball.userData.keep = true;
+    gridGroup.add(ball);
+
+    // Ball inner sprite (child of ball) - larger font relative to ball
+    let ballInnerSprite = null;
+    function createBallInnerSprite(text) {
+      const size = 1024;
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0,0,size,size);
+
+      // Larger font for readability
+      const baseFont = 140; // increased base font for clearer projector visibility
+      const fontSize = Math.round(baseFont * (BALL_RADIUS / 0.9));
+      ctx.font = `bold ${fontSize}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = Math.max(6, Math.round(fontSize * 0.12));
+      const lines = text.split('\n');
+      const startY = size/2 - (lines.length-1) * (fontSize * 0.6);
+      for (let i=0;i<lines.length;i++){
+        const y = startY + i * (fontSize * 0.9);
+        ctx.strokeText(lines[i], size/2, y);
+        ctx.fillText(lines[i], size/2, y);
+      }
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      const mat = new THREE.SpriteMaterial({ map: texture, depthTest: false, depthWrite: false, transparent: true });
+      const sprite = new THREE.Sprite(mat);
+      const scaleFactor = 2.0 * (BALL_RADIUS / 0.9);
+      sprite.scale.set(scaleFactor, scaleFactor, 1);
+      sprite.center.set(0.5, 0.5);
+      return sprite;
+    }
+
+    // Lights
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x222222, 1.0); hemi.position.set(0,20,0); scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xffffff, 0.9); dir.position.set(5,10,7); scene.add(dir);
+
+    // State
+    let motionType = 'uniform';
+    let t = 0;
+    let isAnimating = true;
+    let targetPos = null;
+    let totalDistance = 0;
+    let prevPos = new THREE.Vector3().copy(ball.getWorldPosition(new THREE.Vector3()));
+
+    // Vectors
+    const vectorObjects = []; // { group, vec, color, id, thicknessPx }
+    let resultantObj = null, crossObj = null;
+
+    // Pixel-to-world radius helper
+    function pixelToWorldRadiusAtPoint(point, desiredPx) {
+      const distance = camera.position.distanceTo(point);
+      const vFOV = (camera.fov * Math.PI) / 180;
+      const viewHeight = 2 * Math.tan(vFOV/2) * distance;
+      const pixelSize = viewHeight / renderer.domElement.clientHeight;
+      const radius = (desiredPx * pixelSize) / 2;
+      return Math.max(0.0005, Math.min(radius, 2.0));
+    }
+
+    const DESIRED_PX_DEFAULT = 10;
+    function pixelRadiusAtPoint(point) {
+      return pixelToWorldRadiusAtPoint(point, DESIRED_PX_DEFAULT);
+    }
+
+    // createCylinderBetween supports desiredPx to set approx pixel thickness
+    function createCylinderBetween(p1, p2, color=0x000000, radiusMultiplier=1.0, desiredPx=null) {
+      const dir = new THREE.Vector3().subVectors(p2, p1);
+      const len = dir.length();
+      if (len < 0.0001) return null;
+      const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+      let radius;
+      if (desiredPx !== null && !isNaN(desiredPx)) {
+        radius = pixelToWorldRadiusAtPoint(mid, desiredPx);
+      } else {
+        radius = pixelRadiusAtPoint(mid) * radiusMultiplier;
+      }
+      const geo = new THREE.CylinderGeometry(radius, radius, len, 20);
+      const mat = new THREE.MeshBasicMaterial({ color });
+      const cyl = new THREE.Mesh(geo, mat);
+      cyl.position.copy(mid);
+      cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+      return cyl;
+    }
+
+    // createArrowGroup accepts desiredPx for shaft thickness (pixel-based)
+    function createArrowGroup(vec, color, desiredPx = null) {
+      const len = vec.length();
+      if (len < 0.0001) return null;
+      const dir = vec.clone().normalize();
+      const shaftLen = Math.max(0.001, len * 0.78);
+      const headLen = Math.max(0.001, len * 0.22);
+      const shaftMid = dir.clone().multiplyScalar(shaftLen * 0.5);
+      // compute shaft radius using desiredPx if provided
+      let shaftRadius;
+      if (desiredPx !== null) shaftRadius = pixelToWorldRadiusAtPoint(shaftMid, desiredPx);
+      else shaftRadius = pixelRadiusAtPoint(shaftMid);
+      const shaftGeo = new THREE.CylinderGeometry(shaftRadius, shaftRadius, shaftLen, 20);
+      const shaftMat = new THREE.MeshBasicMaterial({ color });
+      const shaft = new THREE.Mesh(shaftGeo, shaftMat);
+      shaft.position.copy(dir.clone().multiplyScalar(shaftLen/2));
+      shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
+      const headRadius = Math.max(shaftRadius * 1.6, shaftRadius + 0.02);
+      const headGeo = new THREE.ConeGeometry(headRadius, headLen, 20);
+      const headMat = new THREE.MeshBasicMaterial({ color });
+      const head = new THREE.Mesh(headGeo, headMat);
+      head.position.copy(dir.clone().multiplyScalar(shaftLen + headLen/2));
+      head.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
+      const group = new THREE.Group();
+      group.add(shaft); group.add(head);
+      return group;
+    }
+
+    // createTextSprite helper for axis labels
+    function createTextSprite(text, color = '#ffffff', fontSize = 96, scale = 0.9) {
+      const canvas = document.createElement('canvas');
+      const size = 256;
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, size, size);
+      ctx.font = `${fontSize}px Arial`;
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, size/2, size/2);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      const mat = new THREE.SpriteMaterial({ map: texture, depthTest: false, depthWrite: false });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(scale, scale, 1);
+      return sprite;
+    }
+
+    // Build axes and grid lines as children of gridGroup so they rotate together
+    function buildThickAxesAndGrid() {
+      // remove previous axis-like children from gridGroup but KEEP objects marked keep (like ball) and thinGrid
+      for (let i = gridGroup.children.length - 1; i >= 0; i--) {
+        const c = gridGroup.children[i];
+        if (c.userData && (c.userData.keep === true || c.userData.type === 'thinGrid')) continue;
+        gridGroup.remove(c);
+        if (c.geometry) c.geometry.dispose();
+        if (c.material) c.material.dispose();
+      }
+
+      const range = 5;
+
+      // X axis (main) - thick red
+      const p1x = new THREE.Vector3(0,0,0);
+      const p2x = new THREE.Vector3(range,0,0);
+      const xShaft = createCylinderBetween(p1x, p2x, AXIS_COLORS.x, 1.6);
+      if (xShaft) { xShaft.userData.type = 'axis'; gridGroup.add(xShaft); }
+      const xHead = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.5, 20), new THREE.MeshBasicMaterial({ color: AXIS_COLORS.x }));
+      xHead.position.copy(new THREE.Vector3(range + 0.25, 0, 0));
+      xHead.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(1,0,0));
+      xHead.userData.type = 'axis';
+      gridGroup.add(xHead);
+      const xLabel = createTextSprite('X', '#ffffff', 96, 1.1);
+      xLabel.position.copy(new THREE.Vector3(range + 1.0, 0, 0));
+      gridGroup.add(xLabel);
+
+      // Y axis (main)
+      const p1y = new THREE.Vector3(0,0,0);
+      const p2y = new THREE.Vector3(0,range,0);
+      const yShaft = createCylinderBetween(p1y, p2y, AXIS_COLORS.y, 1.2);
+      if (yShaft) { yShaft.userData.type = 'axis'; gridGroup.add(yShaft); }
+      const yHead = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.4, 20), new THREE.MeshBasicMaterial({ color: AXIS_COLORS.y }));
+      yHead.position.copy(new THREE.Vector3(0, range + 0.2, 0));
+      yHead.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(0,1,0));
+      yHead.userData.type = 'axis';
+      gridGroup.add(yHead);
+      const yLabel = createTextSprite('Y', '#ffffff', 96, 1.0);
+      yLabel.position.copy(new THREE.Vector3(0, range + 0.9, 0));
+      gridGroup.add(yLabel);
+
+      // Z axis (main) - red as requested earlier
+      const p1z = new THREE.Vector3(0,0,0);
+      const p2z = new THREE.Vector3(0,0,range);
+      const zShaft = createCylinderBetween(p1z, p2z, AXIS_COLORS.x, 1.6);
+      if (zShaft) { zShaft.userData.type = 'axis'; gridGroup.add(zShaft); }
+      const zHead = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.5, 20), new THREE.MeshBasicMaterial({ color: AXIS_COLORS.x }));
+      zHead.position.copy(new THREE.Vector3(0, 0, range + 0.25));
+      zHead.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,1));
+      zHead.userData.type = 'axis';
+      gridGroup.add(zHead);
+      const zLabel = createTextSprite('Z', '#ffffff', 96, 1.1);
+      zLabel.position.copy(new THREE.Vector3(0, 0, range + 1.0));
+      gridGroup.add(zLabel);
+
+      // Grid lines:
+      // center lines should be ~4px (we already implemented desiredPx usage)
+      const CENTER_LINE_PX = 4;
+
+      for (let z=-range; z<=range; z++) {
+        const p1 = new THREE.Vector3(-range,0,z), p2 = new THREE.Vector3(range,0,z);
+        // horizontal lines colored red
+        const color = GRID_MAJOR_COLOR;
+        const isCenter = (z === 0);
+        const cyl = createCylinderBetween(p1,p2,color,1.0, isCenter ? CENTER_LINE_PX : null);
+        if (cyl) { cyl.userData.type = 'gridLine'; gridGroup.add(cyl); }
+      }
+      for (let x=-range; x<=range; x++) {
+        const p1 = new THREE.Vector3(x,0,-range), p2 = new THREE.Vector3(x,0,range);
+        const isCenter = (x === 0);
+        const color = isCenter ? GRID_MAJOR_COLOR : GRID_MINOR_COLOR;
+        const cyl = createCylinderBetween(p1,p2,color,1.0, isCenter ? CENTER_LINE_PX : null);
+        if (cyl) { cyl.userData.type = 'gridLine'; gridGroup.add(cyl); }
+      }
+    }
+
+    // grid tick labels (DOM overlay)
+    const gridTickLabels = [];
+    function buildGridLabels() {
+      gridTickLabels.forEach(o => { if (o.div && o.div.parentNode) o.div.parentNode.removeChild(o.div); });
+      gridTickLabels.length = 0;
+      const range = 5;
+      for (let i=-range; i<=range; i++) {
+        const div = document.createElement('div'); div.className = 'tickLabel'; div.innerText = `x=${i}`;
+        document.getElementById('labelContainer').appendChild(div);
+        gridTickLabels.push({ div, localPos: new THREE.Vector3(i,0,0.18), tangentLocalPos: new THREE.Vector3(i+0.5,0,0.18) });
+      }
+      for (let i=-range; i<=range; i++) {
+        if (i===0) continue;
+        const div = document.createElement('div'); div.className = 'tickLabel'; div.innerText = `z=${i}`;
+        document.getElementById('labelContainer').appendChild(div);
+        gridTickLabels.push({ div, localPos: new THREE.Vector3(0,0,i), tangentLocalPos: new THREE.Vector3(0.5,0,i) });
+      }
+      for (let i=1; i<=range; i++) {
+        const div = document.createElement('div'); div.className = 'tickLabel'; div.innerText = `y=${i}`;
+        document.getElementById('labelContainer').appendChild(div);
+        gridTickLabels.push({ div, localPos: new THREE.Vector3(0,i,0), tangentLocalPos: new THREE.Vector3(0.5,i,0) });
+      }
+    }
+
+    function worldToScreenInRightArea(worldPos) {
+      const pos = worldPos.clone().project(camera);
+      const rect = document.getElementById('rightArea').getBoundingClientRect();
+      const x = rect.left + (pos.x * 0.5 + 0.5) * rect.width;
+      const y = rect.top + ( - pos.y * 0.5 + 0.5) * rect.height;
+      return { x, y, z: pos.z };
+    }
+
+    function worldToScreenPosition(worldPos, labelDiv, rotateAngleRad = 0) {
+      const p = worldToScreenInRightArea(worldPos);
+      if (p.z > 1 || p.z < -1) { labelDiv.style.display = 'none'; return; }
+      labelDiv.style.display = 'block';
+      const deg = rotateAngleRad ? (rotateAngleRad * 180 / Math.PI) : 0;
+      labelDiv.style.transform = `translate(-50%,-50%) translate(${p.x}px, ${p.y}px) rotate(${deg}deg)`;
+    }
+
+    function screenAngleBetween(worldA, worldB) {
+      const a = worldA.clone().project(camera);
+      const b = worldB.clone().project(camera);
+      const ax = (a.x * 0.5 + 0.5) * renderer.domElement.clientWidth;
+      const ay = ( - a.y * 0.5 + 0.5) * renderer.domElement.clientHeight;
+      const bx = (b.x * 0.5 + 0.5) * renderer.domElement.clientWidth;
+      const by = ( - b.y * 0.5 + 0.5) * renderer.domElement.clientHeight;
+      const dx = bx - ax, dy = by - ay;
+      return Math.atan2(dy, dx);
+    }
+
+    function updateProjectionLines() {
+      while (projGroup.children.length) { const c=projGroup.children[0]; projGroup.remove(c); if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); }
+      const worldP = ball.getWorldPosition(new THREE.Vector3());
+      const pX1 = new THREE.Vector3(0, worldP.y, worldP.z), pX2 = worldP.clone();
+      const cX = createCylinderBetween(pX1,pX2,AXIS_COLORS.x,1.0); if(cX) projGroup.add(cX);
+      const pY1 = new THREE.Vector3(worldP.x, 0, worldP.z), pY2 = worldP.clone();
+      const cY = createCylinderBetween(pY1,pY2,AXIS_COLORS.y,1.0); if(cY) projGroup.add(cY);
+      const pZ1 = new THREE.Vector3(worldP.x, worldP.y, 0), pZ2 = worldP.clone();
+      const cZ = createCylinderBetween(pZ1,pZ2,AXIS_COLORS.x,1.0); if(cZ) projGroup.add(cZ);
+    }
+
+    // Format vector as î ĵ k̂
+    function formatVecIJK(vec) {
+      const i = vec.x.toFixed(2), j = vec.y.toFixed(2), k = vec.z.toFixed(2);
+      return `${i} î  +  ${j} ĵ  +  ${k} k̂`;
+    }
+
+    function updateVectorInfoPanel() {
+      const container = document.getElementById('vectorInfo');
+      container.innerHTML = '';
+      vectorObjects.forEach(o => {
+        const card = document.createElement('div'); card.style.padding='8px'; card.style.borderRadius='6px'; card.style.background='rgba(255,255,255,0.03)'; card.style.display='flex'; card.style.gap='8px'; card.style.alignItems='center';
+        const sw = document.createElement('div'); sw.style.width='18px'; sw.style.height='12px'; sw.style.background='#'+o.color.toString(16).padStart(6,'0'); sw.style.borderRadius='3px';
+        const txt = document.createElement('div'); txt.style.fontSize='14px'; txt.innerHTML=`<strong>V${o.id}</strong>: ${formatVecIJK(o.vec)}  |  |V|=${o.vec.length().toFixed(2)}  |  thickness=${o.thicknessPx}px`;
+        card.appendChild(sw); card.appendChild(txt); container.appendChild(card);
+      });
+      if (resultantObj) {
+        const card = document.createElement('div'); card.style.padding='8px'; card.style.borderRadius='6px'; card.style.background='rgba(255,255,255,0.03)';
+        card.innerHTML = `<strong>Resultant</strong>: ${formatVecIJK(resultantObj.vec)}  |  |R|=${resultantObj.vec.length().toFixed(2)}`;
+        container.appendChild(card);
+      }
+      if (crossObj) {
+        const card = document.createElement('div'); card.style.padding='8px'; card.style.borderRadius='6px'; card.style.background='rgba(255,255,255,0.03)';
+        card.innerHTML = `<strong>Cross</strong>: ${formatVecIJK(crossObj.vec)}  |  |C|=${crossObj.vec.length().toFixed(2)}`;
+        container.appendChild(card);
+      }
+    }
+
+    // Sync range and number inputs
+    window.syncRangeFromNumber = function(rangeId, numId) {
+      const num = document.getElementById(numId);
+      const range = document.getElementById(rangeId);
+      let v = parseInt(num.value) || 1;
+      v = Math.max(parseInt(range.min), Math.min(parseInt(range.max), v));
+      range.value = v;
+      num.value = v;
+    };
+    // keep number synced when sliding
+    document.getElementById('v1th').addEventListener('input', ()=>{ document.getElementById('v1thNum').value = document.getElementById('v1th').value; });
+    document.getElementById('v2th').addEventListener('input', ()=>{ document.getElementById('v2thNum').value = document.getElementById('v2th').value; });
+
+    // Add vector from inputs (reads thickness slider)
+    window.setVectorFromInputs = function(which) {
+      const vx = parseFloat(document.getElementById(`v${which}x`).value) || 0;
+      const vy = parseFloat(document.getElementById(`v${which}y`).value) || 0;
+      const vz = parseFloat(document.getElementById(`v${which}z`).value) || 0;
+      const thicknessPx = parseInt(document.getElementById(`v${which}th`).value) || 6;
+      const vec = new THREE.Vector3(vx, vy, vz);
+      const color = which===1 ? V1_COLOR : V2_COLOR;
+      const idx = vectorObjects.findIndex(o => o.id === which);
+      if (idx !== -1) {
+        const ex = vectorObjects[idx];
+        if (ex.group) scene.remove(ex.group);
+        vectorObjects.splice(idx,1);
+      }
+      const group = createArrowGroup(vec, color, thicknessPx);
+      if (group) {
+        group.position.set(0,0,0);
+        scene.add(group);
+        vectorObjects.push({ group, vec: vec.clone(), color, id: which, thicknessPx });
+      }
+      updateVectorInfoPanel();
+    };
+
+    window.showResultant = function() {
+      if (resultantObj) {
+        if (resultantObj.group) scene.remove(resultantObj.group);
+        resultantObj = null;
+      }
+      if (vectorObjects.length === 0) return;
+      const sum = new THREE.Vector3(0,0,0);
+      vectorObjects.forEach(o => sum.add(o.vec));
+      const group = createArrowGroup(sum, 0xffff66, 8);
+      if (group) {
+        group.position.set(0,0,0);
+        scene.add(group);
+        resultantObj = { group, vec: sum.clone() };
+        const p1 = new THREE.Vector3(sum.x, 0, sum.z), p2 = sum.clone();
+        const proj = createCylinderBetween(p1, p2, 0xffff66, 1.0);
+        if (proj) projGroup.add(proj);
+      }
+      updateVectorInfoPanel();
+    };
+
+    window.showDotCross = function() {
+      if (vectorObjects.length < 2) return;
+      const v1 = vectorObjects[0].vec.clone(), v2 = vectorObjects[1].vec.clone();
+      const dot = v1.dot(v2);
+      const cross = v1.clone().cross(v2);
+      document.getElementById('dotVal').textContent = `${dot.toFixed(3)}`;
+      document.getElementById('crossLen').textContent = `${cross.length().toFixed(3)}`;
+      if (crossObj) {
+        if (crossObj.group) scene.remove(crossObj.group);
+        crossObj = null;
+      }
+      if (cross.length() > 0.0001) {
+        const group = createArrowGroup(cross, 0x66ffff, 6);
+        if (group) {
+          group.position.set(0,0,0);
+          scene.add(group);
+          crossObj = { group, vec: cross.clone() };
+        }
+      }
+      updateVectorInfoPanel();
+    };
+
+    window.clearVectors = function() {
+      vectorObjects.forEach(o => { if (o.group) scene.remove(o.group); });
+      vectorObjects.length = 0;
+      if (resultantObj) { if (resultantObj.group) scene.remove(resultantObj.group); resultantObj = null; }
+      if (crossObj) { if (crossObj.group) scene.remove(crossObj.group); crossObj = null; }
+      while (projGroup.children.length) { const c = projGroup.children[0]; projGroup.remove(c); if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); }
+      document.getElementById('dotVal').textContent = '0.00';
+      document.getElementById('crossLen').textContent = '0.00';
+      updateVectorInfoPanel();
+    };
+
+    // Ball controls
+    window.setBallPosition = function() {
+      const x = parseFloat(document.getElementById('ballX').value) || 0;
+      const y = parseFloat(document.getElementById('ballY').value) || 0;
+      const z = parseFloat(document.getElementById('ballZ').value) || 0;
+      ball.position.set(x,y,z);
+      prevPos.copy(ball.getWorldPosition(new THREE.Vector3()));
+      updateProjectionLines();
+      updateBallInnerLabel();
+    };
+
+    window.moveBallToInputs = function() {
+      const x = parseFloat(document.getElementById('ballX').value) || 0;
+      const y = parseFloat(document.getElementById('ballY').value) || 0;
+      const z = parseFloat(document.getElementById('ballZ').value) || 0;
+      targetPos = new THREE.Vector3(x,y,z);
+      isAnimating = false;
+    };
+
+    // Motion controls
+    window.setMotion = function(type) {
+      motionType = type; t = 0; totalDistance = 0; prevPos.copy(ball.getWorldPosition(new THREE.Vector3())); isAnimating = true; targetPos = null;
+      document.getElementById('btnUniform').style.boxShadow = type==='uniform' ? 'inset 0 0 0 3px rgba(255,184,102,0.18)' : '';
+      document.getElementById('btnNonUniform').style.boxShadow = type==='nonuniform' ? 'inset 0 0 0 3px rgba(255,184,102,0.18)' : '';
+      document.getElementById('btnAccelerated').style.boxShadow = type==='accelerated' ? 'inset 0 0 0 3px rgba(255,184,102,0.18)' : '';
+    };
+
+    // Scene controls
+    window.rotateScene = function(axis) {
+      const d = 0.22;
+      if (axis==='x') gridGroup.rotation.x += d;
+      if (axis==='y') gridGroup.rotation.y += d;
+      if (axis==='z') gridGroup.rotation.z += d;
+    };
+
+    // Center camera: reset grid rotation and camera
+    window.centerCamera = function() {
+      gridGroup.rotation.copy(INITIAL_GRID_ROT);
+      camera.position.copy(INITIAL_CAMERA_POS);
+      camera.up.copy(INITIAL_CAMERA_UP);
+      const worldCenter = gridGroup.getWorldPosition(new THREE.Vector3());
+      camera.lookAt(worldCenter);
+      camera.updateProjectionMatrix();
+      buildThickAxesAndGrid();
+      buildGridLabels();
+      updateProjectionLines();
+      updateBallInnerLabel();
+      resizeRenderer();
+    };
+
+    // Update or create ball inner label (placed as child of ball)
+    function updateBallInnerLabel() {
+      const local = ball.position;
+      const text = `${local.x.toFixed(2)} î\n${local.y.toFixed(2)} ĵ\n${local.z.toFixed(2)} k̂`;
+      if (ballInnerSprite) {
+        if (ballInnerSprite.material && ballInnerSprite.material.map) ballInnerSprite.material.map.dispose();
+        ball.remove(ballInnerSprite);
+        ballInnerSprite = null;
+      }
+      ballInnerSprite = createBallInnerSprite(text);
+      ballInnerSprite.position.set(0, 0, 0);
+      ball.add(ballInnerSprite);
+    }
+
+    // Animation loop
+    let lastTime = performance.now();
+    function animate() {
+      requestAnimationFrame(animate);
+      const now = performance.now();
+      const dt = Math.min(0.05, (now - lastTime)/1000);
+      lastTime = now;
+
+      if (isAnimating) {
+        if (motionType === 'uniform') {
+          ball.position.x = (t % 6) - 3; ball.position.y = 0; ball.position.z = 0;
+        } else if (motionType === 'nonuniform') {
+          ball.position.x = Math.sin(t)*3; ball.position.y = Math.cos(t)*2; ball.position.z = Math.sin(t/2)*1.5;
+        } else if (motionType === 'accelerated') {
+          ball.position.x = t*0.05; ball.position.y = 0.5*0.1*t*t*0.01; ball.position.z = 0;
+        }
+        const currWorld = ball.getWorldPosition(new THREE.Vector3());
+        totalDistance += currWorld.distanceTo(prevPos);
+        prevPos.copy(currWorld);
+        t += 0.05 * (dt * 60);
+      }
+
+      if (targetPos) {
+        const lerpFactor = Math.min(1, 0.12 + 0.6*dt);
+        ball.position.lerp(targetPos, lerpFactor);
+        const currWorld = ball.getWorldPosition(new THREE.Vector3());
+        totalDistance += currWorld.distanceTo(prevPos);
+        prevPos.copy(currWorld);
+        if (ball.position.distanceTo(targetPos) < 0.01) { ball.position.copy(targetPos); targetPos = null; }
+      }
+
+      // rebuild axes/grid & labels
+      buildThickAxesAndGrid();
+      buildGridLabels();
+      updateProjectionLines();
+
+      // recreate vector groups to adapt thickness and camera distance
+      vectorObjects.forEach((o) => {
+        if (o.group) scene.remove(o.group);
+        const created = createArrowGroup(o.vec, o.color, o.thicknessPx);
+        if (created) {
+          created.position.set(0,0,0);
+          scene.add(created);
+          o.group = created;
+        } else o.group = null;
+      });
+
+      // recreate resultant/cross if present
+      if (resultantObj && resultantObj.vec) {
+        if (resultantObj.group) scene.remove(resultantObj.group);
+        const created = createArrowGroup(resultantObj.vec, 0xffff66, 8);
+        if (created) { created.position.set(0,0,0); scene.add(created); resultantObj.group = created; }
+      }
+      if (crossObj && crossObj.vec) {
+        if (crossObj.group) scene.remove(crossObj.group);
+        const created = createArrowGroup(crossObj.vec, 0x66ffff, 6);
+        if (created) { created.position.set(0,0,0); scene.add(created); crossObj.group = created; }
+      }
+
+      // Update grid tick labels positions
+      gridTickLabels.forEach(item => {
+        const worldPos = item.localPos.clone().applyMatrix4(gridGroup.matrixWorld);
+        const worldTangent = item.tangentLocalPos.clone().applyMatrix4(gridGroup.matrixWorld);
+        const angle = screenAngleBetween(worldPos, worldTangent);
+        worldToScreenPosition(worldPos, item.div, angle);
+      });
+
+      // Update ball inner label (recreate to update text)
+      updateBallInnerLabel();
+
+      // Update left panel info
+      const worldBall = ball.getWorldPosition(new THREE.Vector3());
+      document.getElementById('simTime').textContent = `${(t/0.05).toFixed(1)} s`;
+      document.getElementById('simDistance').textContent = `${totalDistance.toFixed(2)}`;
+      document.getElementById('simDisp').textContent = `${worldBall.length().toFixed(2)}`;
+
+      updateVectorInfoPanel();
+
+      renderer.render(scene, camera);
+    }
+
+    // initial build
+    function init() {
+      buildThickAxesAndGrid();
+      buildGridLabels();
+      updateProjectionLines();
+      prevPos.copy(ball.getWorldPosition(new THREE.Vector3()));
+      resizeRenderer();
+      animate();
+    }
+    init();
+
+    // resize
+    window.addEventListener('resize', () => { resizeRenderer(); });
+
+    // keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.key === ' ') { e.preventDefault(); toggleAnimation(); }
+      else if (e.key.toLowerCase() === 'r') { resetScene(); }
+      else if (e.key.toLowerCase() === 'v') {
+        const rx = (Math.random()*2-1).toFixed(2), ry = (Math.random()*2-1).toFixed(2), rz = (Math.random()*2-1).toFixed(2);
+        document.getElementById('v1x').value = rx; document.getElementById('v1y').value = ry; document.getElementById('v1z').value = rz;
+        setVectorFromInputs(1);
+      }
+    });
+
+    window.toggleAnimation = window.toggleAnimation || function(){ isAnimating = !isAnimating; };
+
+    // reset
+    function resetScene() {
+      clearVectors();
+      ball.position.set(0,0,0);
+      gridGroup.rotation.copy(INITIAL_GRID_ROT);
+      targetPos = null;
+      isAnimating = true;
+      t = 0;
+      totalDistance = 0;
+      prevPos.copy(ball.getWorldPosition(new THREE.Vector3()));
+      camera.position.copy(INITIAL_CAMERA_POS);
+      camera.up.copy(INITIAL_CAMERA_UP);
+      camera.lookAt(INITIAL_CAMERA_TARGET);
+      camera.updateProjectionMatrix();
+      buildThickAxesAndGrid();
+      buildGridLabels();
+      updateProjectionLines();
+      updateBallInnerLabel();
+      resizeRenderer();
+    }
+    window.resetScene = resetScene;
+
+    // expose internals for debugging
+    window._sim = { scene, camera, renderer, gridGroup, vectorObjects, ball };
+
+  })();
+  </script>
+</body>
+</html>

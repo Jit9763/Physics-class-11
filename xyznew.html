@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Class 11 Physics Simulator — Thick Grid & Vectors (≈5px)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --panel-bg: rgba(255,255,255,0.95);
+      --muted: #666;
+      --accent: #1565c0;
+    }
+    html,body { height:100%; margin:0; font-family: Arial, Helvetica, sans-serif; background:#eef2f5; }
+    canvas { display:block; width:100%; height:100%; }
+
+    /* Panels */
+    #overlay {
+      position: absolute; left: 12px; top: 12px;
+      background: var(--panel-bg); padding:8px 10px; border-radius:6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12); font-size:14px; z-index:6;
+    }
+    #variables {
+      position: absolute; right: 12px; top: 12px;
+      width: 260px; background: var(--panel-bg); padding:10px; border-radius:6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12); font-size:14px; z-index:6;
+    }
+    #controls {
+      position: absolute; left: 12px; top: 90px;
+      width: 360px; background: var(--panel-bg); padding:12px; border-radius:8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12); font-size:14px; z-index:6;
+    }
+    #controls h3 { margin:6px 0 8px 0; font-size:15px; }
+    #controls .row { margin:6px 0; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    #controls input[type="number"]{ width:72px; padding:4px; border-radius:4px; border:1px solid #ccc; }
+    #controls button{ padding:6px 8px; border-radius:5px; border:1px solid #bbb; background:#fff; cursor:pointer; }
+    #controls button.primary { background: var(--accent); color:#fff; border-color: rgba(0,0,0,0.08); }
+    #controls small { color:var(--muted); display:block; margin-top:4px; }
+
+    hr { border: none; border-top: 1px solid #e0e0e0; margin:10px 0; }
+
+    .muted { color: var(--muted); font-size:12px; }
+
+    @media (max-width:900px){
+      #controls { width: 320px; left: 8px; top: 80px; }
+      #variables { width: 200px; right:8px; top:8px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="overlay">X: 0.00, Y: 0.00, Z: 0.00</div>
+
+  <div id="variables">
+    <strong>Simulation</strong><br>
+    <span id="simTime">Time: 0.0 s</span><br>
+    <span id="simDistance">Distance: 0.00</span><br>
+    <span id="simDisp">Displacement: 0.00</span><br>
+    <hr style="margin:8px 0;">
+    <strong>Vector Info</strong><br>
+    <span id="dotVal">Dot: 0.00</span><br>
+    <span id="crossLen">Cross Length: 0.00</span><br>
+    <small class="muted">Add vectors then use the vector tools to visualize results.</small>
+  </div>
+
+  <div id="controls" aria-label="Simulator controls">
+    <h3>Motion (गति)</h3>
+    <div class="row">
+      <button onclick="setMotion('uniform')" id="btnUniform">Uniform</button>
+      <button onclick="setMotion('nonuniform')" id="btnNonUniform">Non-Uniform</button>
+      <button onclick="setMotion('accelerated')" id="btnAccelerated">Accelerated</button>
+    </div>
+    <small class="muted">Choose a motion type to see different trajectories.</small>
+
+    <hr>
+
+    <h3>Coordinates (निर्देशांक)</h3>
+    <div class="row">
+      X: <input id="xCoord" type="number" value="0" step="0.5">
+      Y: <input id="yCoord" type="number" value="0" step="0.5">
+      Z: <input id="zCoord" type="number" value="0" step="0.5">
+      <button class="primary" onclick="moveBall()">Move Object</button>
+    </div>
+    <small class="muted">Enter coordinates and press Move — object will move smoothly.</small>
+
+    <hr>
+
+    <h3>Vectors (सदिश)</h3>
+    <div class="row">
+      <button onclick="addVector()">Add Random Vector</button>
+      <button onclick="showResultant()">Show Resultant</button>
+      <button onclick="showSubtraction()">Show Subtraction</button>
+      <button onclick="showDotCross()">Dot & Cross</button>
+      <button onclick="clearVectors()">Clear Vectors</button>
+    </div>
+    <small class="muted">Vectors are drawn from origin. Add 2+ vectors to use subtraction/dot/cross.</small>
+
+    <hr>
+
+    <h3>Scene Control</h3>
+    <div class="row">
+      <button onclick="rotateScene('x')">Rotate X</button>
+      <button onclick="rotateScene('y')">Rotate Y</button>
+      <button onclick="rotateScene('z')">Rotate Z</button>
+      <button onclick="toggleAnimation()">Pause / Play</button>
+      <button onclick="resetScene()">Reset Scene</button>
+    </div>
+    <small class="muted">Reset clears vectors and returns view to default.</small>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+
+    // Scene, camera, renderer
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf6f8fa);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(7, 7, 7);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    // Thin visual grid for reference (kept subtle)
+    const thinGrid = new THREE.GridHelper(10, 10, 0xcccccc, 0xeeeeee);
+    thinGrid.rotation.x = Math.PI / 2;
+    thinGrid.material.opacity = 0.6;
+    thinGrid.material.transparent = true;
+    scene.add(thinGrid);
+
+    // Groups for thick elements
+    const axesGroup = new THREE.Group();    // thick central axes
+    const gridGroup = new THREE.Group();    // thick grid major lines
+    const projGroup = new THREE.Group();    // projection lines from ball
+    scene.add(axesGroup, gridGroup, projGroup);
+
+    // Ball (object)
+    const ballMat = new THREE.MeshPhongMaterial({ color: 0x1565c0, shininess: 30 });
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.22, 24, 24), ballMat);
+    ball.position.set(0, 0, 0);
+    scene.add(ball);
+
+    // Lighting
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.9);
+    hemi.position.set(0, 20, 0);
+    scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+    dir.position.set(5, 10, 7);
+    scene.add(dir);
+
+    // State
+    let motionType = 'uniform';
+    let t = 0;
+    let isAnimating = true;
+    let targetPos = null;
+    let manualMoveActive = false;
+
+    let totalDistance = 0;
+    let prevPos = new THREE.Vector3().copy(ball.position);
+
+    // Vectors storage
+    const vectorObjects = [];
+    let resultantArrow = null;
+    let subtractionArrow = null;
+    let crossArrow = null;
+
+    // UI elements
+    const overlayEl = document.getElementById('overlay');
+    const simTimeEl = document.getElementById('simTime');
+    const simDistanceEl = document.getElementById('simDistance');
+    const simDispEl = document.getElementById('simDisp');
+    const dotValEl = document.getElementById('dotVal');
+    const crossLenEl = document.getElementById('crossLen');
+
+    // Desired thickness in screen pixels
+    const DESIRED_PX = 5;
+
+    // Compute world-space radius that corresponds to approx desired screen pixels at a point
+    function pixelRadiusAtPoint(point) {
+      const distance = camera.position.distanceTo(point);
+      const vFOV = (camera.fov * Math.PI) / 180;
+      const viewHeight = 2 * Math.tan(vFOV / 2) * distance;
+      const pixelSize = viewHeight / renderer.domElement.clientHeight;
+      const radius = (DESIRED_PX * pixelSize) / 2;
+      return Math.max(0.01, Math.min(radius, 0.8));
+    }
+
+    // Create cylinder between two points with radius computed to appear ~DESIRED_PX
+    function createCylinderBetween(p1, p2, color = 0x000000) {
+      const direction = new THREE.Vector3().subVectors(p2, p1);
+      const length = direction.length();
+      if (length < 0.0001) return null;
+      const midpoint = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+      const radius = pixelRadiusAtPoint(midpoint);
+      const geometry = new THREE.CylinderGeometry(radius, radius, length, 12);
+      const material = new THREE.MeshBasicMaterial({ color });
+      const cylinder = new THREE.Mesh(geometry, material);
+      cylinder.position.copy(midpoint);
+      const axis = new THREE.Vector3(0, 1, 0);
+      cylinder.quaternion.setFromUnitVectors(axis, direction.clone().normalize());
+      return cylinder;
+    }
+
+    // Create custom thick arrow (shaft + head) with thickness ~DESIRED_PX
+    function createThickArrow(vec, color = 0x000000) {
+      const len = vec.length();
+      if (len < 0.0001) return null;
+      const dir = vec.clone().normalize();
+      const shaftLength = Math.max(0.001, len * 0.78);
+      const headLength = Math.max(0.001, len * 0.22);
+
+      const shaftMid = dir.clone().multiplyScalar(shaftLength * 0.5);
+      const shaftRadius = pixelRadiusAtPoint(shaftMid);
+
+      const shaftGeo = new THREE.CylinderGeometry(shaftRadius, shaftRadius, shaftLength, 12);
+      const shaftMat = new THREE.MeshBasicMaterial({ color });
+      const shaft = new THREE.Mesh(shaftGeo, shaftMat);
+      shaft.position.copy(dir.clone().multiplyScalar(shaftLength / 2));
+      shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+
+      const headRadius = Math.max(shaftRadius * 1.6, shaftRadius + 0.01);
+      const headGeo = new THREE.ConeGeometry(headRadius, headLength, 12);
+      const headMat = new THREE.MeshBasicMaterial({ color });
+      const head = new THREE.Mesh(headGeo, headMat);
+      head.position.copy(dir.clone().multiplyScalar(shaftLength + headLength / 2));
+      head.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+
+      const group = new THREE.Group();
+      group.add(shaft);
+      group.add(head);
+      return group;
+    }
+
+    // Build thick central axes (X red, Y green, Z blue) from -5 to +5
+    function buildThickAxes() {
+      while (axesGroup.children.length) {
+        const c = axesGroup.children[0];
+        axesGroup.remove(c);
+        if (c.geometry) c.geometry.dispose();
+        if (c.material) c.material.dispose();
+      }
+      const len = 10;
+      const half = len / 2;
+
+      const p1x = new THREE.Vector3(-half, 0, 0);
+      const p2x = new THREE.Vector3(half, 0, 0);
+      const cylX = createCylinderBetween(p1x, p2x, 0xff0000);
+      if (cylX) axesGroup.add(cylX);
+
+      const p1y = new THREE.Vector3(0, -half, 0);
+      const p2y = new THREE.Vector3(0, half, 0);
+      const cylY = createCylinderBetween(p1y, p2y, 0x00aa00);
+      if (cylY) axesGroup.add(cylY);
+
+      const p1z = new THREE.Vector3(0, 0, -half);
+      const p2z = new THREE.Vector3(0, 0, half);
+      const cylZ = createCylinderBetween(p1z, p2z, 0x0000ff);
+      if (cylZ) axesGroup.add(cylZ);
+    }
+
+    // Build thick major grid lines on XZ plane (every integer from -5..5)
+    function buildThickGrid() {
+      while (gridGroup.children.length) {
+        const c = gridGroup.children[0];
+        gridGroup.remove(c);
+        if (c.geometry) c.geometry.dispose();
+        if (c.material) c.material.dispose();
+      }
+      const range = 5;
+      // Lines parallel to X (varying Z)
+      for (let z = -range; z <= range; z++) {
+        const p1 = new THREE.Vector3(-range, 0, z);
+        const p2 = new THREE.Vector3(range, 0, z);
+        // make central lines slightly brighter
+        const color = (z === 0) ? 0x666666 : 0xcccccc;
+        const cyl = createCylinderBetween(p1, p2, color);
+        if (cyl) gridGroup.add(cyl);
+      }
+      // Lines parallel to Z (varying X)
+      for (let x = -range; x <= range; x++) {
+        const p1 = new THREE.Vector3(x, 0, -range);
+        const p2 = new THREE.Vector3(x, 0, range);
+        const color = (x === 0) ? 0x666666 : 0xcccccc;
+        const cyl = createCylinderBetween(p1, p2, color);
+        if (cyl) gridGroup.add(cyl);
+      }
+    }
+
+    // Update projection lines (thick)
+    function updateProjectionLines() {
+      while (projGroup.children.length) {
+        const c = projGroup.children[0];
+        projGroup.remove(c);
+        if (c.geometry) c.geometry.dispose();
+        if (c.material) c.material.dispose();
+      }
+      const p = ball.position.clone();
+
+      const pX1 = new THREE.Vector3(0, p.y, p.z);
+      const pX2 = p.clone();
+      const cylX = createCylinderBetween(pX1, pX2, 0xff0000);
+      if (cylX) projGroup.add(cylX);
+
+      const pY1 = new THREE.Vector3(p.x, 0, p.z);
+      const pY2 = p.clone();
+      const cylY = createCylinderBetween(pY1, pY2, 0x00aa00);
+      if (cylY) projGroup.add(cylY);
+
+      const pZ1 = new THREE.Vector3(p.x, p.y, 0);
+      const pZ2 = p.clone();
+      const cylZ = createCylinderBetween(pZ1, pZ2, 0x0000ff);
+      if (cylZ) projGroup.add(cylZ);
+    }
+
+    // Add vector (thick arrow) from origin
+    function addVectorInternal(vec, color) {
+      const arrowGroup = createThickArrow(vec, color);
+      if (!arrowGroup) return null;
+      scene.add(arrowGroup);
+      return arrowGroup;
+    }
+
+    // Exposed functions
+    window.setMotion = function(type) {
+      motionType = type;
+      t = 0;
+      totalDistance = 0;
+      prevPos.copy(ball.position);
+      isAnimating = true;
+      targetPos = null;
+      manualMoveActive = false;
+      document.getElementById('btnUniform').style.boxShadow = type === 'uniform' ? 'inset 0 0 0 2px rgba(21,101,192,0.12)' : '';
+      document.getElementById('btnNonUniform').style.boxShadow = type === 'nonuniform' ? 'inset 0 0 0 2px rgba(21,101,192,0.12)' : '';
+      document.getElementById('btnAccelerated').style.boxShadow = type === 'accelerated' ? 'inset 0 0 0 2px rgba(21,101,192,0.12)' : '';
+    };
+
+    window.moveBall = function() {
+      const x = parseFloat(document.getElementById('xCoord').value) || 0;
+      const y = parseFloat(document.getElementById('yCoord').value) || 0;
+      const z = parseFloat(document.getElementById('zCoord').value) || 0;
+      targetPos = new THREE.Vector3(x, y, z);
+      manualMoveActive = true;
+      isAnimating = false;
+    };
+
+    window.toggleAnimation = function() {
+      if (manualMoveActive) {
+        targetPos = null;
+        manualMoveActive = false;
+      }
+      isAnimating = !isAnimating;
+      prevPos.copy(ball.position);
+    };
+
+    window.rotateScene = function(axis) {
+      const delta = 0.18;
+      if (axis === 'x') scene.rotation.x += delta;
+      if (axis === 'y') scene.rotation.y += delta;
+      if (axis === 'z') scene.rotation.z += delta;
+    };
+
+    window.resetScene = function() {
+      clearVectors();
+      ball.position.set(0, 0, 0);
+      targetPos = null;
+      isAnimating = true;
+      t = 0;
+      totalDistance = 0;
+      prevPos.copy(ball.position);
+      scene.rotation.set(0, 0, 0);
+      camera.position.set(7, 7, 7);
+      camera.lookAt(0, 0, 0);
+      updateUI();
+      updateProjectionLines();
+      buildThickAxes();
+      buildThickGrid();
+    };
+
+    window.addVector = function() {
+      const dir = new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
+      if (dir.length() < 0.2) dir.set(1, 0.2, 0.1);
+      const mag = 0.8 + Math.random() * 1.2;
+      const vec = dir.normalize().multiplyScalar(mag);
+      const color = Math.floor(Math.random() * 0xffffff);
+      const group = addVectorInternal(vec, color);
+      if (group) {
+        vectorObjects.push({ group, vec: vec.clone(), color });
+      }
+      updateUI();
+    };
+
+    function clearVectors() {
+      vectorObjects.forEach(o => scene.remove(o.group));
+      vectorObjects.length = 0;
+      if (resultantArrow) { scene.remove(resultantArrow); resultantArrow = null; }
+      if (subtractionArrow) { scene.remove(subtractionArrow); subtractionArrow = null; }
+      if (crossArrow) { scene.remove(crossArrow); crossArrow = null; }
+      dotValEl.textContent = 'Dot: 0.00';
+      crossLenEl.textContent = 'Cross Length: 0.00';
+    }
+    window.clearVectors = clearVectors;
+
+    window.showResultant = function() {
+      if (resultantArrow) { scene.remove(resultantArrow); resultantArrow = null; }
+      if (vectorObjects.length === 0) return;
+      const sum = new THREE.Vector3(0, 0, 0);
+      vectorObjects.forEach(o => sum.add(o.vec));
+      resultantArrow = addVectorInternal(sum, 0x000000);
+      updateUI();
+    };
+
+    window.showSubtraction = function() {
+      if (subtractionArrow) { scene.remove(subtractionArrow); subtractionArrow = null; }
+      if (vectorObjects.length < 2) return;
+      const diff = vectorObjects[0].vec.clone().sub(vectorObjects[1].vec);
+      subtractionArrow = addVectorInternal(diff, 0xff00ff);
+      updateUI();
+    };
+
+    window.showDotCross = function() {
+      if (crossArrow) { scene.remove(crossArrow); crossArrow = null; }
+      if (vectorObjects.length < 2) return;
+      const v1 = vectorObjects[0].vec.clone();
+      const v2 = vectorObjects[1].vec.clone();
+      const dot = v1.dot(v2);
+      const cross = v1.clone().cross(v2);
+      if (cross.length() > 0.0001) {
+        crossArrow = addVectorInternal(cross, 0x00ffff);
+      }
+      dotValEl.textContent = 'Dot: ' + dot.toFixed(3);
+      crossLenEl.textContent = 'Cross Length: ' + cross.length().toFixed(3);
+      updateUI();
+    };
+
+    function updateUI() {
+      overlayEl.textContent = `X: ${ball.position.x.toFixed(2)}, Y: ${ball.position.y.toFixed(2)}, Z: ${ball.position.z.toFixed(2)}`;
+      simTimeEl.textContent = `Time: ${(t / 0.05).toFixed(1)} s`;
+      simDistanceEl.textContent = `Distance: ${totalDistance.toFixed(2)}`;
+      simDispEl.textContent = `Displacement: ${ball.position.length().toFixed(2)}`;
+    }
+
+    // Animation loop
+    let lastTime = performance.now();
+    function animate() {
+      requestAnimationFrame(animate);
+      const now = performance.now();
+      const dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+
+      if (isAnimating) {
+        if (motionType === 'uniform') {
+          ball.position.x = (t % 6) - 3;
+          ball.position.y = 0;
+          ball.position.z = 0;
+        } else if (motionType === 'nonuniform') {
+          ball.position.x = Math.sin(t) * 3;
+          ball.position.y = Math.cos(t) * 2;
+          ball.position.z = Math.sin(t / 2) * 1.5;
+        } else if (motionType === 'accelerated') {
+          ball.position.x = t * 0.05;
+          ball.position.y = 0.5 * 0.1 * t * t * 0.01;
+          ball.position.z = 0;
+        }
+        const curr = ball.position.clone();
+        totalDistance += curr.distanceTo(prevPos);
+        prevPos.copy(curr);
+        t += 0.05 * (dt * 60);
+      }
+
+      if (targetPos) {
+        const lerpFactor = Math.min(1, 0.12 + 0.6 * dt);
+        ball.position.lerp(targetPos, lerpFactor);
+        const curr = ball.position.clone();
+        totalDistance += curr.distanceTo(prevPos);
+        prevPos.copy(curr);
+        if (ball.position.distanceTo(targetPos) < 0.01) {
+          ball.position.copy(targetPos);
+          targetPos = null;
+          manualMoveActive = false;
+        }
+      }
+
+      // Recreate thick axes and grid each frame so thickness adapts to camera distance
+      buildThickAxes();
+      buildThickGrid();
+
+      // Recreate vector groups to adapt thickness to camera distance
+      vectorObjects.forEach((o) => {
+        if (o.group) scene.remove(o.group);
+        const newGroup = addVectorInternal(o.vec, o.color);
+        o.group = newGroup;
+      });
+
+      // Recreate result/subtraction/cross arrows to update thickness if present
+      if (resultantArrow) {
+        scene.remove(resultantArrow);
+        const sum = new THREE.Vector3(0, 0, 0);
+        vectorObjects.forEach(o => sum.add(o.vec));
+        resultantArrow = addVectorInternal(sum, 0x000000);
+      }
+      if (subtractionArrow) {
+        scene.remove(subtractionArrow);
+        if (vectorObjects.length >= 2) {
+          const diff = vectorObjects[0].vec.clone().sub(vectorObjects[1].vec);
+          subtractionArrow = addVectorInternal(diff, 0xff00ff);
+        } else subtractionArrow = null;
+      }
+      if (crossArrow) {
+        scene.remove(crossArrow);
+        if (vectorObjects.length >= 2) {
+          const cross = vectorObjects[0].vec.clone().cross(vectorObjects[1].vec);
+          crossArrow = addVectorInternal(cross, 0x00ffff);
+        } else crossArrow = null;
+      }
+
+      updateProjectionLines();
+      updateUI();
+      renderer.render(scene, camera);
+    }
+
+    prevPos.copy(ball.position);
+    animate();
+
+    // Resize handling
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.key === ' ') { e.preventDefault(); toggleAnimation(); }
+      else if (e.key === 'r') { resetScene(); }
+      else if (e.key === 'v') { addVector(); }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,450 @@
+let currentAnimation = null; // global handle
+
+function stopAnimation() {
+  if (currentAnimation) {
+    cancelAnimationFrame(currentAnimation);
+    currentAnimation = null;
+  }
+}
+
+function activateSim(id) {
+  const card = document.getElementById(id);
+  const simId = card.getAttribute('data-sim-id');
+  const placeholder = card.querySelector('.sim-placeholder');
+
+  const canvasWidth = Math.min(window.innerWidth * 0.9, 500);
+  const canvasHeight = Math.min(window.innerHeight * 0.9, 300);
+
+  // Har naye simulation se pehle purana animation band karein
+  stopAnimation();
+
+  switch(simId) {
+    case "Sheet1":
+      placeholder.innerHTML = `<canvas id="motionCanvas" width="${canvasWidth}" height="${canvasHeight}" style="border:1px solid #ccc; border-radius:8px; background:#fafafa;"></canvas>`;
+      runMotionSim();
+      break;
+
+    case "Sheet2":
+      placeholder.innerHTML = `
+        <canvas id="motionTypesCanvas" width="500" height="300" style="border:1px solid #ccc; border-radius:8px; background:#fafafa;"></canvas>
+        <div style="margin-top:10px;">
+          <button onclick="runLinearMotion()">रेखीय गति</button>
+          <button onclick="runCircularMotion()">वृत्तीय गति</button>
+          <button onclick="runParabolicMotion()">परवलयिक गति</button>
+        </div>`;
+      break;
+
+    case "Sheet3":
+      placeholder.innerHTML = `<canvas id="sheet3Canvas" width="${canvasWidth}" height="${canvasHeight}" style="border:1px solid #ccc; border-radius:8px; background:#fafafa;"></canvas>`;
+      runSheet3Sim();
+      break;
+
+    case "Sheet6":
+      placeholder.innerHTML = `<canvas id="sheet6Canvas" width="${canvasWidth}" height="${canvasHeight}" style="border:1px solid #ccc; border-radius:8px; background:#fafafa;"></canvas>`;
+      runSheet6Sim();
+      break;
+    case "Sheet5": // Image style Distance vs Displacement
+      placeholder.innerHTML = `
+        <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+          <canvas id="posDispCanvas" width="600" height="300" style="background:#fff;"></canvas>
+          <div style="margin-top:10px; display: flex; align-items: center; gap: 15px; font-family: sans-serif; font-size: 14px;">
+            <button onclick="showPositionPathDisplacement('posDispCanvas')" style="padding: 5px 15px;">Play</button>
+            <button onclick="stopAnimation()" style="padding: 5px 15px;">Pause</button>
+            <button onclick="resetPosDisp('posDispCanvas')" style="padding: 5px 15px;">Reset</button>
+            <label>Speed: <input type="range" min="20" max="200" value="70" oninput="simSpeed = this.value"></label>
+            <span id="simTime">Time: 0.00 s</span>
+          </div>
+          <div style="margin-top:10px; font-weight: bold; font-family: sans-serif;">
+            Distance (path): <span id="distVal" style="color: #333;">0.00</span> meter | 
+            Displacement: <span id="dispVal" style="color: red;">0.00</span> meter
+          </div>
+        </div>`;
+      resetPosDisp('posDispCanvas');
+      break;
+//add more cases for other sheets as needed
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    default:
+      placeholder.innerHTML = "<p>⚠️ Simulator not found.</p>";
+  }
+
+  card.querySelector('.sim-btn').style.display = 'none';
+}
+
+
+// 1. Basic Motion Simulator (Sheet1)
+function runMotionSim() {
+  stopAnimation();
+  const canvas = document.getElementById("motionCanvas");
+  const ctx = canvas.getContext("2d");
+  let x = 20, y = canvas.height / 2, velocity = 2, time = 0;
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    ctx.moveTo(20, y);
+    ctx.lineTo(canvas.width - 20, y);
+    ctx.strokeStyle = "#333";
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x, y, 15, 0, Math.PI * 2);
+    ctx.fillStyle = "#3498db";
+    ctx.fill();
+
+    ctx.fillStyle = "#000";
+    ctx.font = "14px Arial";
+    ctx.fillText(`Time: ${time.toFixed(1)}s`, 20, 20);
+    ctx.fillText(`Displacement: ${(x - 20).toFixed(0)}px`, 20, 40);
+
+    x += velocity;
+    time += 0.02;
+
+    if (x < canvas.width - 20) {
+      currentAnimation = requestAnimationFrame(draw);
+    } else {
+      ctx.fillStyle = "red";
+      ctx.fillText("Motion Complete", canvas.width/2 - 50, y - 30);
+    }
+  }
+  draw();
+}
+// type of motion simulators (Sheet2)
+// 2. Linear Motion
+function runLinearMotion() {
+  stopAnimation();
+  const canvas = document.getElementById("motionTypesCanvas");
+  const ctx = canvas.getContext("2d");
+  let x = 20, y = canvas.height / 2;
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    ctx.arc(x, y, 15, 0, Math.PI * 2);
+    ctx.fillStyle = "#3498db";
+    ctx.fill();
+    ctx.fillStyle = "#000";
+    ctx.fillText("रेखीय गति (Linear Motion)", 20, 20);
+
+    x += 2;
+    if (x < canvas.width - 20) {
+      currentAnimation = requestAnimationFrame(draw);
+    }
+  }
+  draw();
+}
+
+// 3. Circular Motion
+function runCircularMotion() {
+  stopAnimation();
+  const canvas = document.getElementById("motionTypesCanvas");
+  const ctx = canvas.getContext("2d");
+  let angle = 0, radius = 70, cx = canvas.width / 2, cy = canvas.height / 2;
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let x = cx + radius * Math.cos(angle);
+    let y = cy + radius * Math.sin(angle);
+
+    ctx.beginPath();
+    ctx.arc(x, y, 15, 0, Math.PI * 2);
+    ctx.fillStyle = "#e67e22";
+    ctx.fill();
+    ctx.fillStyle = "#000";
+    ctx.fillText("वृत्तीय गति (Circular Motion)", 20, 20);
+
+    angle += 0.05;
+    currentAnimation = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// 4. Parabolic Motion
+function runParabolicMotion() {
+  stopAnimation();
+  const canvas = document.getElementById("motionTypesCanvas");
+  const ctx = canvas.getContext("2d");
+  let x = 20, y = canvas.height - 20, vx = 4, vy = -10, g = 0.3;
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    ctx.arc(x, y, 15, 0, Math.PI * 2);
+    ctx.fillStyle = "#2ecc71";
+    ctx.fill();
+    ctx.fillStyle = "#000";
+    ctx.fillText("परवलयिक गति (Projectile Motion)", 20, 20);
+
+    x += vx;
+    y += vy;
+    vy += g;
+
+    if (y < canvas.height - 15 && x < canvas.width) {
+      currentAnimation = requestAnimationFrame(draw);
+    }
+  }
+  draw();
+}
+
+// Placeholder functions for Sheet 5 & 6
+function runSheet5Sim() {
+  const ctx = document.getElementById("sheet5Canvas").getContext("2d");
+  ctx.fillText("Simulator for Sheet5 is active.", 50, 150);
+}
+
+function runSheet6Sim() {
+  const ctx = document.getElementById("sheet6Canvas").getContext("2d");
+  ctx.fillText("Simulator for Sheet6 is active.", 50, 150);
+}
+// --- Position vs Displacement Simulator (New) --- sheet5Canvas ke liye
+/* Draw axes (caller should clear canvas before calling if needed) */
+// global speed default (ensures simSpeed हमेशा defined रहे)
+let simSpeed = 70;
+// Global scale (adjust as needed)
+let scalePxPerMeter = 10; // 10 px = 1 m
+
+function drawAxes(ctx, canvas) {
+  ctx.save();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const left = 40;
+  const bottom = canvas.height - 40;
+  const right = canvas.width - 40;
+  const top = 20;
+
+  // Axis lines
+  ctx.strokeStyle = "#1a0dab";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(left, top); ctx.lineTo(left, bottom); // Y axis
+  ctx.moveTo(left, bottom); ctx.lineTo(right, bottom); // X axis
+  ctx.stroke();
+
+  // Tick settings: every 5 meters
+  const tickIntervalMeters = 5;
+  const tickPx = tickIntervalMeters * scalePxPerMeter;
+
+  ctx.strokeStyle = "#1a0dab";
+  ctx.lineWidth = 4;
+  ctx.fillStyle = "#1a0dab";
+  ctx.font = "12px Arial";
+
+  // X ticks and numeric labels (every tickIntervalMeters)
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  const xRangePx = right - left;
+  const maxXMeters = Math.floor(xRangePx / scalePxPerMeter);
+  const maxXTicks = Math.floor(xRangePx / tickPx);
+  for (let i = 0; i <= maxXTicks; i++) {
+    const meters = i * tickIntervalMeters;
+    const x = left + i * tickPx;
+    if (x > right) break;
+    ctx.beginPath();
+    ctx.moveTo(x, bottom);
+    ctx.lineTo(x, bottom + 6);
+    ctx.stroke();
+    ctx.fillText(String(meters), x, bottom + 8);
+  }
+
+  // Y ticks and numeric labels (every tickIntervalMeters)
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  const yRangePx = bottom - top;
+  const maxYMeters = Math.floor(yRangePx / scalePxPerMeter);
+  const maxYTicks = Math.floor(yRangePx / tickPx);
+  for (let i = 0; i <= maxYTicks; i++) {
+    const meters = i * tickIntervalMeters;
+    const y = bottom - i * tickPx;
+    if (y < top) break;
+    ctx.beginPath();
+    ctx.moveTo(left - 6, y);
+    ctx.lineTo(left, y);
+    ctx.stroke();
+    ctx.fillText(String(meters), left - 8, y);
+  }
+
+  // Axis labels and origin marker
+  ctx.textAlign = "left";
+  ctx.textBaseline = "bottom";
+  ctx.fillText("X (m)", right - 10, bottom + 22);
+  ctx.textAlign = "center";
+  ctx.fillText("Y (m)", left - 18, top + 8);
+
+  ctx.fillStyle = "#000";
+  ctx.beginPath();
+  ctx.arc(left, bottom, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+/* Update UI labels safely */
+function updateLabels(timeSec, traveledPx, dispPx) {
+  const simTimeEl = document.getElementById("simTime");
+  const distEl = document.getElementById("distVal");
+  const dispEl = document.getElementById("dispVal");
+  if (simTimeEl) simTimeEl.innerText = `Time: ${timeSec.toFixed(2)} s`;
+  if (distEl) distEl.innerText = (traveledPx / 10).toFixed(2);
+  if (dispEl) dispEl.innerText = (dispPx / 10).toFixed(2);
+}
+
+/* Main: show position along a polyline path, draw path, traveled distance and displacement */
+function showPositionPathDisplacement(canvasId, options = {}) {
+  stopAnimation();
+
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return console.error("Canvas not found:", canvasId);
+  const ctx = canvas.getContext("2d");
+
+  // Use passed simSpeed or global simSpeed
+  const speed = (typeof options.simSpeed === "number") ? options.simSpeed : Number(simSpeed) || 70; // px/sec
+
+  const startX = 40, startY = 260;
+  const pathPoints = options.pathPoints || [
+    {x:150, y:100}, {x:250, y:200}, {x:350, y:50}, {x:450, y:220}, {x:550, y:120}
+  ];
+
+  const segments = [{x:startX, y:startY}, ...pathPoints];
+  const lens = [];
+  let totalDist = 0;
+  for (let i = 0; i < segments.length - 1; i++) {
+    const L = Math.hypot(segments[i+1].x - segments[i].x, segments[i+1].y - segments[i].y);
+    lens.push(L);
+    totalDist += L;
+  }
+
+  if (totalDist === 0) {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawAxes(ctx, canvas);
+    updateLabels(0,0,0);
+    return;
+  }
+
+  let t = 0;                     // time in seconds
+  const fpsDelta = 1 / 60;       // time step for each frame (approx)
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawAxes(ctx, canvas);
+
+    // distance along path at time t
+    const distanceAlong = Math.min(speed * t, totalDist);
+
+    // find current segment and interpolated position
+    let acc = 0, px = startX, py = startY, traveled = 0;
+    for (let i = 0; i < lens.length; i++) {
+      if (acc + lens[i] >= distanceAlong) {
+        const r = (distanceAlong - acc) / lens[i];
+        px = segments[i].x + (segments[i+1].x - segments[i].x) * r;
+        py = segments[i].y + (segments[i+1].y - segments[i].y) * r;
+        traveled = acc + lens[i] * r;
+        break;
+      }
+      acc += lens[i];
+    }
+
+    // 1) Draw full dashed path (gray)
+    ctx.setLineDash([5,5]);
+    ctx.strokeStyle = "#670808";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    pathPoints.forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 2) Draw displacement (solid red) from start to current pos
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(px, py);
+    ctx.stroke();
+
+    // 3) Draw traveled path so far (solid blue)
+    ctx.strokeStyle = "#4285f4";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    let rem = distanceAlong;
+    for (let i = 0; i < lens.length; i++) {
+      if (rem <= 0) break;
+      if (rem >= lens[i]) {
+        ctx.lineTo(segments[i+1].x, segments[i+1].y);
+      } else {
+        const r = rem / lens[i];
+        const ix = segments[i].x + (segments[i+1].x - segments[i].x) * r;
+        const iy = segments[i].y + (segments[i+1].y - segments[i].y) * r;
+        ctx.lineTo(ix, iy);
+      }
+      rem -= lens[i];
+    }
+    ctx.stroke();
+
+    // 4) Moving dot
+    ctx.fillStyle = "#08963c";
+    ctx.beginPath();
+    ctx.arc(px, py, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    // 5) Update labels
+    const dispPx = Math.hypot(px - startX, py - startY);
+    updateLabels(t, traveled, dispPx);
+
+    // 6) Continue or finish
+    if (distanceAlong < totalDist) {
+      t += fpsDelta;
+      currentAnimation = requestAnimationFrame(draw);
+    } else {
+      // finished: set final labels and clear handle
+      updateLabels(t, totalDist, Math.hypot(segments[segments.length-1].x - startX, segments[segments.length-1].y - startY));
+      currentAnimation = null;
+    }
+  }
+
+  // start animation
+  draw();
+}
+
+/* Reset function for posDispCanvas */
+function resetPosDisp(canvasId) {
+  stopAnimation();
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawAxes(ctx, canvas);
+
+  const distEl = document.getElementById("distVal");
+  const dispEl = document.getElementById("dispVal");
+  const simTimeEl = document.getElementById("simTime");
+  if (distEl) distEl.innerText = "0.00";
+  if (dispEl) dispEl.innerText = "0.00";
+  if (simTimeEl) simTimeEl.innerText = "Time: 0.00 s";
+}
+
+/* Optional: initialize canvas on DOM ready if your case injects HTML dynamically */
+document.addEventListener('DOMContentLoaded', () => {
+  // If your range input uses oninput="simSpeed = this.value" it will set global simSpeed automatically.
+  // But if the HTML is injected dynamically (via placeholder.innerHTML), you may want to wire the range here:
+  const range = document.querySelector('input[type="range"][oninput]');
+  if (range && typeof range.oninput === 'function') {
+    // nothing to do; inline oninput will set simSpeed
+  }
+});

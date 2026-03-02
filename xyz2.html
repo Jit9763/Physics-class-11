@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Physics Simulator — Transparent Labels & Larger Object</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --panel-bg: rgba(255,255,255,0.96);
+      --muted: #444;
+      --accent: #0b63b8;
+      --label-font: 18px;
+      --label-small: 14px;
+    }
+    html,body{ height:100%; margin:0; font-family: "Segoe UI", Roboto, Arial, sans-serif; background:#eef3f8; }
+    canvas{ display:block; width:100%; height:100%; }
+
+    /* UI panels */
+    #overlay {
+      position:absolute; left:12px; top:12px;
+      background:var(--panel-bg); padding:8px 10px; border-radius:8px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.12); font-size:15px; z-index:60;
+    }
+    #variables {
+      position:absolute; right:12px; top:12px;
+      width:300px; background:var(--panel-bg); padding:10px; border-radius:8px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.12); font-size:15px; z-index:60;
+    }
+    #controls {
+      position:absolute; left:12px; top:92px;
+      width:420px; background:var(--panel-bg); padding:12px; border-radius:10px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.14); font-size:15px; z-index:60;
+    }
+    #controls h3 { margin:6px 0 10px 0; font-size:17px; }
+    #controls .row { margin:8px 0; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    #controls input[type="number"]{ width:84px; padding:6px; border-radius:6px; border:1px solid #cfcfcf; font-size:15px; }
+    #controls button{ padding:7px 10px; border-radius:8px; border:1px solid #bdbdbd; background:#fff; cursor:pointer; font-size:14px; }
+    #controls button.primary { background:var(--accent); color:#fff; border-color: rgba(0,0,0,0.08); }
+    #controls small.muted { color:var(--muted); display:block; margin-top:6px; font-size:13px; }
+
+    hr { border:none; border-top:1px solid #e6e6e6; margin:10px 0; }
+
+    /* label container and labels (DOM) */
+    #labelContainer {
+      position: absolute;
+      left: 0; top: 0; pointer-events: none; z-index: 50;
+      width: 100%; height: 100%;
+    }
+    .label2d {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      /* nearly transparent background so object visibility not blocked */
+      background: rgba(255,255,255,0.06);
+      padding:6px 10px;
+      border-radius:6px;
+      font-size: var(--label-font);
+      color:#ffffff;
+      /* text shadow for readability on projector even with transparent bg */
+      text-shadow: 0 0 6px rgba(0,0,0,0.85);
+      border: 1px solid rgba(255,255,255,0.06);
+      white-space:nowrap;
+      box-shadow:0 2px 6px rgba(0,0,0,0.06);
+      pointer-events: none;
+      backdrop-filter: blur(2px);
+    }
+    .label2d.small { font-size: var(--label-small); padding:4px 8px; border-radius:5px; }
+    @media (max-width:1000px){
+      #controls { width:340px; left:8px; top:84px; }
+      #variables { width:240px; right:8px; top:8px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="overlay">X: 0.00, Y: 0.00, Z: 0.00</div>
+
+  <div id="variables">
+    <strong>Simulation</strong><br>
+    <span id="simTime">Time: 0.0 s</span><br>
+    <span id="simDistance">Distance: 0.00</span><br>
+    <span id="simDisp">Displacement: 0.00</span><br>
+    <hr>
+    <strong>Vector Info</strong><br>
+    <span id="dotVal">Dot: 0.00</span><br>
+    <span id="crossLen">Cross Length: 0.00</span><br>
+    <small class="muted">Add vectors then use Resultant / Dot & Cross.</small>
+  </div>
+
+  <div id="controls" aria-label="Simulator controls">
+    <h3>Motion</h3>
+    <div class="row">
+      <button onclick="setMotion('uniform')" id="btnUniform">Uniform</button>
+      <button onclick="setMotion('nonuniform')" id="btnNonUniform">Non-Uniform</button>
+      <button onclick="setMotion('accelerated')" id="btnAccelerated">Accelerated</button>
+    </div>
+
+    <hr>
+
+    <h3>Coordinates</h3>
+    <div class="row">
+      X: <input id="xCoord" type="number" value="0" step="0.5">
+      Y: <input id="yCoord" type="number" value="0" step="0.5">
+      Z: <input id="zCoord" type="number" value="0" step="0.5">
+      <button class="primary" onclick="moveBall()">Move</button>
+    </div>
+
+    <hr>
+
+    <h3>Vectors</h3>
+    <div class="row">
+      <button onclick="addVector()">Add Random Vector</button>
+      <button onclick="showResultant()">Show Resultant</button>
+      <button onclick="showSubtraction()">Show Subtraction</button>
+      <button onclick="showDotCross()">Dot & Cross</button>
+      <button onclick="clearVectors()">Clear Vectors</button>
+    </div>
+
+    <hr>
+
+    <h3>Scene</h3>
+    <div class="row">
+      <button onclick="rotateScene('x')">Rotate X</button>
+      <button onclick="rotateScene('y')">Rotate Y</button>
+      <button onclick="rotateScene('z')">Rotate Z</button>
+      <button onclick="toggleAnimation()">Pause / Play</button>
+      <button onclick="resetScene()">Reset</button>
+    </div>
+    <small class="muted">Shortcuts: Space = Pause/Play, V = Add Vector, R = Reset</small>
+  </div>
+
+  <canvas id="canvas"></canvas>
+  <div id="labelContainer"></div>
+
+  <!-- UMD three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+  <script>
+  (function(){
+    // Scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0f1720); // darker background improves projector contrast
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(8,8,8);
+    camera.lookAt(0,0,0);
+
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    const labelContainer = document.getElementById('labelContainer');
+
+    // Bright colors for projector
+    const AXIS_COLORS = { x: 0xff3b3b, y: 0x2ee06a, z: 0x2b6cff };
+    const GRID_MAJOR = 0x999999;
+    const GRID_MINOR = 0x444444;
+
+    // Thin reference grid
+    const thinGrid = new THREE.GridHelper(10, 10, GRID_MINOR, GRID_MINOR);
+    thinGrid.rotation.x = Math.PI/2;
+    thinGrid.material.opacity = 0.6;
+    thinGrid.material.transparent = true;
+    scene.add(thinGrid);
+
+    // Groups
+    const axesGroup = new THREE.Group(); scene.add(axesGroup);
+    const gridGroup = new THREE.Group(); scene.add(gridGroup);
+    const projGroup = new THREE.Group(); scene.add(projGroup);
+
+    // Ball - made larger per request
+    const ballMat = new THREE.MeshPhongMaterial({ color: 0xffcc33, shininess: 80 });
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.6, 48, 48), ballMat); // radius increased to 0.6
+    ball.position.set(0,0,0);
+    scene.add(ball);
+
+    // Ball DOM label (transparent style applied via CSS)
+    const ballLabelDiv = document.createElement('div');
+    ballLabelDiv.className = 'label2d';
+    ballLabelDiv.style.fontSize = '18px';
+    ballLabelDiv.innerHTML = 'Ball: (0.00, 0.00, 0.00)';
+    labelContainer.appendChild(ballLabelDiv);
+
+    // Lights
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x222222, 1.0); hemi.position.set(0,20,0); scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xffffff, 0.9); dir.position.set(5,10,7); scene.add(dir);
+
+    // State
+    let motionType = 'uniform';
+    let t = 0;
+    let isAnimating = true;
+    let targetPos = null;
+    let manualMoveActive = false;
+
+    let totalDistance = 0;
+    let prevPos = new THREE.Vector3().copy(ball.position);
+
+    // Vectors storage
+    const vectorObjects = []; // { group, vec, color, id, labelDiv, basePos }
+    let nextVectorId = 1;
+    let resultantObj = null, subtractionObj = null, crossObj = null;
+
+    const DESIRED_PX = 10;
+
+    function brightColor() {
+      const r = Math.floor(160 + Math.random()*95);
+      const g = Math.floor(120 + Math.random()*135);
+      const b = Math.floor(120 + Math.random()*135);
+      return (r<<16) + (g<<8) + b;
+    }
+
+    function toEnglishDigits(str) { return String(str); }
+
+    function pixelRadiusAtPoint(point) {
+      const distance = camera.position.distanceTo(point);
+      const vFOV = (camera.fov * Math.PI) / 180;
+      const viewHeight = 2 * Math.tan(vFOV/2) * distance;
+      const pixelSize = viewHeight / renderer.domElement.clientHeight;
+      const radius = (DESIRED_PX * pixelSize) / 2;
+      return Math.max(0.01, Math.min(radius, 1.8));
+    }
+
+    function createCylinderBetween(p1, p2, color=0x000000) {
+      const dir = new THREE.Vector3().subVectors(p2, p1);
+      const len = dir.length();
+      if (len < 0.0001) return null;
+      const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+      const radius = pixelRadiusAtPoint(mid);
+      const geo = new THREE.CylinderGeometry(radius, radius, len, 20);
+      const mat = new THREE.MeshBasicMaterial({ color });
+      const cyl = new THREE.Mesh(geo, mat);
+      cyl.position.copy(mid);
+      cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+      return cyl;
+    }
+
+    function createThickArrowWithLabel(vec, color=0x000000, id=null) {
+      const len = vec.length();
+      if (len < 0.0001) return null;
+      const dir = vec.clone().normalize();
+      const shaftLen = Math.max(0.001, len * 0.78);
+      const headLen = Math.max(0.001, len * 0.22);
+
+      const shaftMid = dir.clone().multiplyScalar(shaftLen * 0.5);
+      const shaftRadius = pixelRadiusAtPoint(shaftMid);
+
+      const shaftGeo = new THREE.CylinderGeometry(shaftRadius, shaftRadius, shaftLen, 20);
+      const shaftMat = new THREE.MeshBasicMaterial({ color });
+      const shaft = new THREE.Mesh(shaftGeo, shaftMat);
+      shaft.position.copy(dir.clone().multiplyScalar(shaftLen/2));
+      shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
+
+      const headRadius = Math.max(shaftRadius * 1.6, shaftRadius + 0.02);
+      const headGeo = new THREE.ConeGeometry(headRadius, headLen, 20);
+      const headMat = new THREE.MeshBasicMaterial({ color });
+      const head = new THREE.Mesh(headGeo, headMat);
+      head.position.copy(dir.clone().multiplyScalar(shaftLen + headLen/2));
+      head.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
+
+      const group = new THREE.Group();
+      group.add(shaft); group.add(head);
+
+      // DOM label (transparent background via CSS)
+      const comps = `(${vec.x.toFixed(2)}, ${vec.y.toFixed(2)}, ${vec.z.toFixed(2)})`;
+      const mag = `|v|=${vec.length().toFixed(2)}`;
+      const idText = id ? `V${id}` : 'V';
+      const labelDiv = document.createElement('div');
+      labelDiv.className = 'label2d';
+      labelDiv.style.fontSize = '18px';
+      labelDiv.innerHTML = `<strong>${idText}</strong>: ${comps} | ${mag}`;
+      labelContainer.appendChild(labelDiv);
+
+      // base world position for label: midpoint along vector from origin
+      const basePos = dir.clone().multiplyScalar(len * 0.5);
+
+      return { group, labelDiv, basePos };
+    }
+
+    function worldToScreenPosition(worldPos, labelDiv, rotateAngleRad = 0) {
+      const pos = worldPos.clone();
+      pos.project(camera);
+      const x = (pos.x * 0.5 + 0.5) * renderer.domElement.clientWidth;
+      const y = ( - pos.y * 0.5 + 0.5) * renderer.domElement.clientHeight;
+      if (pos.z > 1 || pos.z < -1) {
+        labelDiv.style.display = 'none';
+      } else {
+        labelDiv.style.display = 'block';
+        const deg = rotateAngleRad ? (rotateAngleRad * 180 / Math.PI) : 0;
+        labelDiv.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px) rotate(${deg}deg)`;
+      }
+    }
+
+    const gridTickLabels = [];
+    function buildGridLabels() {
+      gridTickLabels.forEach(o => { if (o.div && o.div.parentNode) o.div.parentNode.removeChild(o.div); });
+      gridTickLabels.length = 0;
+      const range = 5;
+      for (let i=-range; i<=range; i++) {
+        const div = document.createElement('div');
+        div.className = 'label2d small';
+        div.style.fontSize = '15px';
+        div.innerHTML = `${toEnglishDigits(i)}`;
+        labelContainer.appendChild(div);
+        gridTickLabels.push({ div, worldPos: new THREE.Vector3(i,0,0.18), tangentWorldPos: new THREE.Vector3(i+0.5,0,0.18) });
+      }
+      for (let i=-range; i<=range; i++) {
+        if (i===0) continue;
+        const div = document.createElement('div');
+        div.className = 'label2d small';
+        div.style.fontSize = '15px';
+        div.innerHTML = `${toEnglishDigits(i)}`;
+        labelContainer.appendChild(div);
+        gridTickLabels.push({ div, worldPos: new THREE.Vector3(0,0,i), tangentWorldPos: new THREE.Vector3(0.5,0,i) });
+      }
+      for (let i=1; i<=range; i++) {
+        const div = document.createElement('div');
+        div.className = 'label2d small';
+        div.style.fontSize = '15px';
+        div.innerHTML = `${toEnglishDigits(i)}`;
+        labelContainer.appendChild(div);
+        gridTickLabels.push({ div, worldPos: new THREE.Vector3(0,i,0), tangentWorldPos: new THREE.Vector3(0.5,i,0) });
+      }
+    }
+
+    function buildThickAxesAndGrid() {
+      while (axesGroup.children.length) { const c=axesGroup.children[0]; axesGroup.remove(c); if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); }
+      while (gridGroup.children.length) { const c=gridGroup.children[0]; gridGroup.remove(c); if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); }
+
+      const range = 5;
+      const p1x = new THREE.Vector3(-range,0,0), p2x = new THREE.Vector3(range,0,0);
+      const axX = createCylinderBetween(p1x,p2x,AXIS_COLORS.x); if (axX) axesGroup.add(axX);
+      const p1y = new THREE.Vector3(0,-range,0), p2y = new THREE.Vector3(0,range,0);
+      const axY = createCylinderBetween(p1y,p2y,AXIS_COLORS.y); if (axY) axesGroup.add(axY);
+      const p1z = new THREE.Vector3(0,0,-range), p2z = new THREE.Vector3(0,0,range);
+      const axZ = createCylinderBetween(p1z,p2z,AXIS_COLORS.z); if (axZ) axesGroup.add(axZ);
+
+      for (let z=-range; z<=range; z++) {
+        const p1 = new THREE.Vector3(-range,0,z), p2 = new THREE.Vector3(range,0,z);
+        const color = (z===0) ? GRID_MAJOR : GRID_MINOR;
+        const cyl = createCylinderBetween(p1,p2,color);
+        if (cyl) gridGroup.add(cyl);
+      }
+      for (let x=-range; x<=range; x++) {
+        const p1 = new THREE.Vector3(x,0,-range), p2 = new THREE.Vector3(x,0,range);
+        const color = (x===0) ? GRID_MAJOR : GRID_MINOR;
+        const cyl = createCylinderBetween(p1,p2,color);
+        if (cyl) gridGroup.add(cyl);
+      }
+    }
+
+    function updateProjectionLines() {
+      while (projGroup.children.length) { const c=projGroup.children[0]; projGroup.remove(c); if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); }
+      const p = ball.position.clone();
+      const pX1 = new THREE.Vector3(0,p.y,p.z), pX2 = p.clone();
+      const cX = createCylinderBetween(pX1,pX2,AXIS_COLORS.x); if(cX) projGroup.add(cX);
+      const pY1 = new THREE.Vector3(p.x,0,p.z), pY2 = p.clone();
+      const cY = createCylinderBetween(pY1,pY2,AXIS_COLORS.y); if(cY) projGroup.add(cY);
+      const pZ1 = new THREE.Vector3(p.x,p.y,0), pZ2 = p.clone();
+      const cZ = createCylinderBetween(pZ1,pZ2,AXIS_COLORS.z); if(cZ) projGroup.add(cZ);
+    }
+
+    function addVectorInternal(vec, color, id=null) {
+      const created = createThickArrowWithLabel(vec, color, id);
+      if (!created) return null;
+      scene.add(created.group);
+      return created;
+    }
+
+    // Expose functions
+    window.setMotion = function(type) {
+      motionType = type; t = 0; totalDistance = 0; prevPos.copy(ball.position); isAnimating = true; targetPos = null; manualMoveActive = false;
+      document.getElementById('btnUniform').style.boxShadow = type==='uniform' ? 'inset 0 0 0 3px rgba(11,99,184,0.12)' : '';
+      document.getElementById('btnNonUniform').style.boxShadow = type==='nonuniform' ? 'inset 0 0 0 3px rgba(11,99,184,0.12)' : '';
+      document.getElementById('btnAccelerated').style.boxShadow = type==='accelerated' ? 'inset 0 0 0 3px rgba(11,99,184,0.12)' : '';
+    };
+
+    window.moveBall = function() {
+      const x = parseFloat(document.getElementById('xCoord').value) || 0;
+      const y = parseFloat(document.getElementById('yCoord').value) || 0;
+      const z = parseFloat(document.getElementById('zCoord').value) || 0;
+      targetPos = new THREE.Vector3(x,y,z); manualMoveActive = true; isAnimating = false;
+    };
+
+    window.toggleAnimation = function() {
+      if (manualMoveActive) { targetPos = null; manualMoveActive = false; }
+      isAnimating = !isAnimating; prevPos.copy(ball.position);
+    };
+
+    window.rotateScene = function(axis) {
+      const d = 0.22;
+      if (axis==='x') scene.rotation.x += d;
+      if (axis==='y') scene.rotation.y += d;
+      if (axis==='z') scene.rotation.z += d;
+    };
+
+    window.resetScene = function() {
+      window.clearVectors();
+      ball.position.set(0,0,0);
+      targetPos = null;
+      isAnimating = true;
+      t = 0;
+      totalDistance = 0;
+      prevPos.copy(ball.position);
+      scene.rotation.set(0,0,0);
+      camera.position.set(8,8,8);
+      camera.lookAt(0,0,0);
+      buildThickAxesAndGrid();
+      buildGridLabels();
+      updateProjectionLines();
+      updateBallLabel();
+    };
+
+    window.addVector = function() {
+      const dir = new THREE.Vector3(Math.random()*2-1, Math.random()*2-1, Math.random()*2-1);
+      if (dir.length() < 0.2) dir.set(1,0.2,0.1);
+      const mag = 0.9 + Math.random()*1.4;
+      const vec = dir.normalize().multiplyScalar(mag);
+      const color = brightColor();
+      const id = nextVectorId++;
+      const created = addVectorInternal(vec, color, id);
+      if (created) {
+        vectorObjects.push({ group: created.group, vec: vec.clone(), color, id, labelDiv: created.labelDiv, basePos: created.basePos.clone() });
+      }
+      updateBallLabel();
+    };
+
+    window.clearVectors = function() {
+      vectorObjects.forEach(o => {
+        if (o.group) scene.remove(o.group);
+        if (o.labelDiv && o.labelDiv.parentNode) o.labelDiv.parentNode.removeChild(o.labelDiv);
+      });
+      vectorObjects.length = 0;
+      nextVectorId = 1;
+      if (resultantObj) { if (resultantObj.group) scene.remove(resultantObj.group); if (resultantObj.labelDiv && resultantObj.labelDiv.parentNode) resultantObj.labelDiv.parentNode.removeChild(resultantObj.labelDiv); resultantObj = null; }
+      if (subtractionObj) { if (subtractionObj.group) scene.remove(subtractionObj.group); if (subtractionObj.labelDiv && subtractionObj.labelDiv.parentNode) subtractionObj.labelDiv.parentNode.removeChild(subtractionObj.labelDiv); subtractionObj = null; }
+      if (crossObj) { if (crossObj.group) scene.remove(crossObj.group); if (crossObj.labelDiv && crossObj.labelDiv.parentNode) crossObj.labelDiv.parentNode.removeChild(crossObj.labelDiv); crossObj = null; }
+      const dotEl = document.getElementById('dotVal'); if (dotEl) dotEl.textContent = 'Dot: 0.00';
+      const crossEl = document.getElementById('crossLen'); if (crossEl) crossEl.textContent = 'Cross Length: 0.00';
+    };
+
+    window.showResultant = function() {
+      if (resultantObj) { if (resultantObj.group) scene.remove(resultantObj.group); if (resultantObj.labelDiv && resultantObj.labelDiv.parentNode) resultantObj.labelDiv.parentNode.removeChild(resultantObj.labelDiv); resultantObj = null; }
+      if (vectorObjects.length === 0) return;
+      const sum = new THREE.Vector3(0,0,0); vectorObjects.forEach(o => sum.add(o.vec));
+      const created = createThickArrowWithLabel(sum, 0x000000, nextVectorId++);
+      if (created) {
+        scene.add(created.group);
+        resultantObj = { group: created.group, vec: sum.clone(), labelDiv: created.labelDiv, basePos: created.basePos.clone(), id: nextVectorId-1 };
+      }
+    };
+
+    window.showSubtraction = function() {
+      if (subtractionObj) { if (subtractionObj.group) scene.remove(subtractionObj.group); if (subtractionObj.labelDiv && subtractionObj.labelDiv.parentNode) subtractionObj.labelDiv.parentNode.removeChild(subtractionObj.labelDiv); subtractionObj = null; }
+      if (vectorObjects.length < 2) return;
+      const diff = vectorObjects[0].vec.clone().sub(vectorObjects[1].vec);
+      const created = createThickArrowWithLabel(diff, 0xff00ff, nextVectorId++);
+      if (created) {
+        scene.add(created.group);
+        subtractionObj = { group: created.group, vec: diff.clone(), labelDiv: created.labelDiv, basePos: created.basePos.clone(), id: nextVectorId-1 };
+      }
+    };
+
+    window.showDotCross = function() {
+      if (crossObj) { if (crossObj.group) scene.remove(crossObj.group); if (crossObj.labelDiv && crossObj.labelDiv.parentNode) crossObj.labelDiv.parentNode.removeChild(crossObj.labelDiv); crossObj = null; }
+      if (vectorObjects.length < 2) return;
+      const v1 = vectorObjects[0].vec.clone(), v2 = vectorObjects[1].vec.clone();
+      const dot = v1.dot(v2);
+      const cross = v1.clone().cross(v2);
+      if (cross.length() > 0.0001) {
+        const created = createThickArrowWithLabel(cross, 0x00ffff, nextVectorId++);
+        if (created) {
+          scene.add(created.group);
+          crossObj = { group: created.group, vec: cross.clone(), labelDiv: created.labelDiv, basePos: created.basePos.clone(), id: nextVectorId-1 };
+        }
+      }
+      const dotEl = document.getElementById('dotVal'); if (dotEl) dotEl.textContent = 'Dot: ' + dot.toFixed(3);
+      const crossEl = document.getElementById('crossLen'); if (crossEl) crossEl.textContent = 'Cross Length: ' + cross.length().toFixed(3);
+    };
+
+    function updateBallLabel() {
+      const ex = `Ball: (${ball.position.x.toFixed(2)}, ${ball.position.y.toFixed(2)}, ${ball.position.z.toFixed(2)})`;
+      ballLabelDiv.innerHTML = ex;
+    }
+
+    function updateOverlay() {
+      document.getElementById('overlay').textContent = `X: ${ball.position.x.toFixed(2)}, Y: ${ball.position.y.toFixed(2)}, Z: ${ball.position.z.toFixed(2)}`;
+      document.getElementById('simTime').textContent = `Time: ${(t/0.05).toFixed(1)} s`;
+      document.getElementById('simDistance').textContent = `Distance: ${totalDistance.toFixed(2)}`;
+      document.getElementById('simDisp').textContent = `Displacement: ${ball.position.length().toFixed(2)}`;
+    }
+
+    function screenAngleBetween(worldA, worldB) {
+      const a = worldA.clone().project(camera);
+      const b = worldB.clone().project(camera);
+      const ax = (a.x * 0.5 + 0.5) * renderer.domElement.clientWidth;
+      const ay = ( - a.y * 0.5 + 0.5) * renderer.domElement.clientHeight;
+      const bx = (b.x * 0.5 + 0.5) * renderer.domElement.clientWidth;
+      const by = ( - b.y * 0.5 + 0.5) * renderer.domElement.clientHeight;
+      const dx = bx - ax, dy = by - ay;
+      return Math.atan2(dy, dx);
+    }
+
+    let lastTime = performance.now();
+    function animate() {
+      requestAnimationFrame(animate);
+      const now = performance.now();
+      const dt = Math.min(0.05, (now - lastTime)/1000);
+      lastTime = now;
+
+      if (isAnimating) {
+        if (motionType === 'uniform') {
+          ball.position.x = (t % 6) - 3; ball.position.y = 0; ball.position.z = 0;
+        } else if (motionType === 'nonuniform') {
+          ball.position.x = Math.sin(t)*3; ball.position.y = Math.cos(t)*2; ball.position.z = Math.sin(t/2)*1.5;
+        } else if (motionType === 'accelerated') {
+          ball.position.x = t*0.05; ball.position.y = 0.5*0.1*t*t*0.01; ball.position.z = 0;
+        }
+        const curr = ball.position.clone();
+        totalDistance += curr.distanceTo(prevPos);
+        prevPos.copy(curr);
+        t += 0.05 * (dt * 60);
+      }
+
+      if (targetPos) {
+        const lerpFactor = Math.min(1, 0.12 + 0.6*dt);
+        ball.position.lerp(targetPos, lerpFactor);
+        const curr = ball.position.clone();
+        totalDistance += curr.distanceTo(prevPos);
+        prevPos.copy(curr);
+        if (ball.position.distanceTo(targetPos) < 0.01) { ball.position.copy(targetPos); targetPos = null; manualMoveActive = false; }
+      }
+
+      buildThickAxesAndGrid();
+      buildGridLabels();
+      updateProjectionLines();
+
+      vectorObjects.forEach((o, idx) => {
+        if (o.group) scene.remove(o.group);
+        if (o.labelDiv && o.labelDiv.parentNode) o.labelDiv.parentNode.removeChild(o.labelDiv);
+        const created = addVectorInternal(o.vec, o.color, o.id);
+        if (created) {
+          o.group = created.group;
+          o.labelDiv = created.labelDiv;
+          o.basePos = created.basePos.clone();
+        } else {
+          o.group = null;
+        }
+      });
+
+      if (resultantObj) {
+        if (resultantObj.group) scene.remove(resultantObj.group);
+        if (resultantObj.labelDiv && resultantObj.labelDiv.parentNode) resultantObj.labelDiv.parentNode.removeChild(resultantObj.labelDiv);
+        const sum = new THREE.Vector3(0,0,0); vectorObjects.forEach(o => sum.add(o.vec));
+        const created = createThickArrowWithLabel(sum, 0x000000, resultantObj.id);
+        if (created) {
+          scene.add(created.group);
+          resultantObj.group = created.group;
+          resultantObj.labelDiv = created.labelDiv;
+          resultantObj.basePos = created.basePos.clone();
+          resultantObj.vec = sum.clone();
+        }
+      }
+      if (subtractionObj) {
+        if (subtractionObj.group) scene.remove(subtractionObj.group);
+        if (subtractionObj.labelDiv && subtractionObj.labelDiv.parentNode) subtractionObj.labelDiv.parentNode.removeChild(subtractionObj.labelDiv);
+        if (vectorObjects.length >= 2) {
+          const diff = vectorObjects[0].vec.clone().sub(vectorObjects[1].vec);
+          const created = createThickArrowWithLabel(diff, 0xff00ff, subtractionObj.id);
+          if (created) {
+            scene.add(created.group);
+            subtractionObj.group = created.group;
+            subtractionObj.labelDiv = created.labelDiv;
+            subtractionObj.basePos = created.basePos.clone();
+            subtractionObj.vec = diff.clone();
+          }
+        } else subtractionObj = null;
+      }
+      if (crossObj) {
+        if (crossObj.group) scene.remove(crossObj.group);
+        if (crossObj.labelDiv && crossObj.labelDiv.parentNode) crossObj.labelDiv.parentNode.removeChild(crossObj.labelDiv);
+        if (vectorObjects.length >= 2) {
+          const cross = vectorObjects[0].vec.clone().cross(vectorObjects[1].vec);
+          const created = createThickArrowWithLabel(cross, 0x00ffff, crossObj.id);
+          if (created) {
+            scene.add(created.group);
+            crossObj.group = created.group;
+            crossObj.labelDiv = created.labelDiv;
+            crossObj.basePos = created.basePos.clone();
+            crossObj.vec = cross.clone();
+          }
+        } else crossObj = null;
+      }
+
+      // Update DOM labels positions and rotations
+      const ballLabelWorld = ball.position.clone().add(new THREE.Vector3(0.8,0.8,0.8));
+      worldToScreenPosition(ballLabelWorld, ballLabelDiv);
+
+      gridTickLabels.forEach(item => {
+        const angle = screenAngleBetween(item.worldPos, item.tangentWorldPos);
+        worldToScreenPosition(item.worldPos, item.div, angle);
+      });
+
+      vectorObjects.forEach(o => {
+        if (!o.labelDiv) return;
+        const worldPos = o.basePos.clone();
+        const vecEnd = o.basePos.clone().add(o.vec.clone().normalize().multiplyScalar(0.5));
+        const angle = screenAngleBetween(worldPos, vecEnd);
+        worldToScreenPosition(worldPos, o.labelDiv, angle);
+      });
+
+      [resultantObj, subtractionObj, crossObj].forEach(obj => {
+        if (!obj || !obj.labelDiv) return;
+        const worldPos = obj.basePos.clone();
+        const vecEnd = worldPos.clone().add(obj.vec ? obj.vec.clone().normalize().multiplyScalar(0.5) : new THREE.Vector3(0.5,0,0));
+        const angle = screenAngleBetween(worldPos, vecEnd);
+        worldToScreenPosition(worldPos, obj.labelDiv, angle);
+      });
+
+      updateBallLabel();
+      updateOverlay();
+
+      renderer.render(scene, camera);
+    }
+
+    // init
+    buildThickAxesAndGrid();
+    buildGridLabels();
+    updateProjectionLines();
+    prevPos.copy(ball.position);
+    animate();
+
+    // resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.key === ' ') { e.preventDefault(); toggleAnimation(); }
+      else if (e.key.toLowerCase() === 'r') { resetScene(); }
+      else if (e.key.toLowerCase() === 'v') { addVector(); }
+    });
+
+    window.toggleAnimation = window.toggleAnimation || function(){ isAnimating = !isAnimating; };
+
+  })();
+  </script>
+</body>
+</html>

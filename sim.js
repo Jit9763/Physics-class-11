@@ -200,15 +200,34 @@ function runParabolicMotion() {
   draw();
 }
 
-// Placeholder functions for Sheet 5 & 6
-function runSheet5Sim() {
-  const ctx = document.getElementById("sheet5Canvas").getContext("2d");
-  ctx.fillText("Simulator for Sheet5 is active.", 50, 150);
-}
+
 
 function runSheet6Sim() {
-  const ctx = document.getElementById("sheet6Canvas").getContext("2d");
-  ctx.fillText("Simulator for Sheet6 is active.", 50, 150);
+  const canvas = document.getElementById("sheet6Canvas");
+  if (!canvas) {
+    console.error("❌ Canvas element 'sheet6Canvas' not found!");
+    return;
+  }
+
+  const ctx = canvas.getContext("2d");
+
+  // Canvas par ek message draw karna (optional)
+  ctx.font = "20px Arial";
+  ctx.fillStyle = "blue";
+  ctx.fillText("Click anywhere to open xyz3.html", 50, 150);
+
+  // Pure canvas ko clickable banana
+  canvas.onclick = function() {
+    window.open("xyz3.html", "_blank");  
+    // Agar same page me kholna ho to:
+    // window.location.href = "xyz3.html";
+  };
+}
+
+
+function runSheet7Sim() {
+  const ctx = document.getElementById("sheet7Canvas").getContext("2d");
+  ctx.fillText("Simulator for Sheet7 is active.", 50, 150);
 }
 // --- Position vs Displacement Simulator (New) --- sheet5Canvas ke liye
 /* Draw axes (caller should clear canvas before calling if needed) */

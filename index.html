@@ -1,8 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Physics Portal</title>
+  
   <link rel="stylesheet" href="style.css">
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
   <script src="sim.js"></script>
 </head>
 <body>
@@ -57,7 +70,11 @@
             for (let i = 1; i < rows.length; i++) {
               if (rows[i].c[0]) notes += `<p>• ${rows[i].c[0].v}</p>`;
             }
-            el.querySelector('.notes-area').innerHTML = notes || "No notes available.";
+            const notesArea = el.querySelector('.notes-area');
+            notesArea.innerHTML = notes || "No notes available.";
+            if (window.MathJax && window.MathJax.typesetPromise) {
+              window.MathJax.typesetPromise([notesArea]);
+            }
           })
           .catch(err => {
             console.error(err);

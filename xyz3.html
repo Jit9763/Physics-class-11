@@ -133,7 +133,7 @@
   (function(){
     // Colors
     const AXIS_COLORS = { x: 0xff3b30, y: 0x00e676, z: 0x0077ff };
-    const GRID_MAJOR_COLOR = 0xff3b30; // horizontal red
+    const GRID_MAJOR_COLOR = 0x003366; // horizontal red
     const GRID_MINOR_COLOR = 0x003366; // vertical dark blue
 
     // Vector colors requested
@@ -346,7 +346,7 @@
       xHead.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(1,0,0));
       xHead.userData.type = 'axis';
       gridGroup.add(xHead);
-      const xLabel = createTextSprite('X', '#ffffff', 96, 1.1);
+      const xLabel = createTextSprite('X', '#ffffff', 96, 2.1);
       xLabel.position.copy(new THREE.Vector3(range + 1.0, 0, 0));
       gridGroup.add(xLabel);
 
@@ -360,7 +360,7 @@
       yHead.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(0,1,0));
       yHead.userData.type = 'axis';
       gridGroup.add(yHead);
-      const yLabel = createTextSprite('Y', '#ffffff', 96, 1.0);
+      const yLabel = createTextSprite('Y', '#ffffff', 96, 3.0);
       yLabel.position.copy(new THREE.Vector3(0, range + 0.9, 0));
       gridGroup.add(yLabel);
 
@@ -374,7 +374,7 @@
       zHead.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,1));
       zHead.userData.type = 'axis';
       gridGroup.add(zHead);
-      const zLabel = createTextSprite('Z', '#ffffff', 96, 1.1);
+      const zLabel = createTextSprite('Z', '#ffffff', 96, 2.1);
       zLabel.position.copy(new THREE.Vector3(0, 0, range + 1.0));
       gridGroup.add(zLabel);
 

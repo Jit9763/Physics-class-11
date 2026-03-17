@@ -1,0 +1,82 @@
+--- Extracted from page-01.jpg ---
+QUESTION: 4. जनगणना मकान के फर्श में प्रयुक्त प्रमुख सामग्री
+OPTION: O 2-लकड़ी/बांस
+OPTION: O 5-सीमेंट
+OPTION: O 7-अन्य कोई
+--- Extracted from page-02.jpg ---
+QUESTION: 5. जनगणना मकान की दीवार में प्रयुक्त प्रमुख सामग्री
+OPTION: O 6-पत्थर मसाला गारा के साथ
+OPTION: O 7-जी.आई./धातु /एस्बेस्टस चादर
+--- Extracted from page-03.jpg ---
+QUESTION: 6. जनगणना मकान की छत में प्रयुक्त प्रमुख सामग्री
+OPTION: O 2-प्लास्टिक/पॉलिथीन
+OPTION: O 5-पक्‍की ईंट
+OPTION: O 6-पत्थर
+OPTION: O 0०-अन्य कोई
+--- Extracted from page-04.jpg ---
+QUESTION: 7. जनगणना मकान के उपयोग का पता लगायें.
+OPTION: 2-आवास-सह-अन्य उपयोग
+OPTION: 5-होटल/लॉज/गेस्ट हाउस आदि
+OPTION: 6-अस्पताल/डिस्पेन्सरी आदि
+OPTION: 9-अन्य गैर-आवासीय उपयोग
+--- Extracted from page-05.jpg ---
+QUESTION: 8. जनगणना मकान की स्थिति
+--- Extracted from page-06.jpg ---
+QUESTION: 9. परिवार क्रमांक
+QUESTION: 0. इस परिवार में सामान्यतः रहने वाले व्यक्तियों की
+QUESTION: 77.aReare के मुखिया का नाम
+--- Extracted from page-07.jpg ---
+QUESTION: 72. लिंग
+QUESTION: 43. यदि अनुसूचित जाति/ अनुसूचित जनजाति या अन्य
+--- Extracted from page-08.jpg ---
+QUESTION: 6. इस परिवार में रहने वाले विवाहित दंपत्तियों की
+--- Extracted from page-09.jpg ---
+QUESTION: 7. पेयजल का मुख्य स्रोत
+OPTION: O 7-नदी/नहर
+OPTION: O 9-टैंक/तालाब/झील
+OPTION: O 9-सीलबंद पैकेट / बोतल का पानी
+--- Extracted from page-10.jpg ---
+QUESTION: 48.पेयजल स्रोत की उपलब्धता
+OPTION: O 2-परिसर के निकट
+--- Extracted from page-11.jpg ---
+OPTION: O 6-प्रकाश रहित
+--- Extracted from page-12.jpg ---
+QUESTION: 20. शौचालय की सुलभता
+--- Extracted from page-13.jpg ---
+QUESTION: 22. शौचालय का प्रकार
+OPTION: O 3३-अन्य पद्धति
+OPTION: O 5-स्लैब के बिना/खुला गड्ढा
+OPTION: O 8-मानव मल-मूत्र व्यक्ति द्वारा हटाया जाता है
+OPTION: O 9-मानव मल-मूत्र हटाने के लिए जानवरों का उपयोग
+--- Extracted from page-14.jpg ---
+QUESTION: 22. गंदे पानी की निकासी किससे जुड़ी हुई है:
+--- Extracted from page-15.jpg ---
+QUESTION: 23. परिसर के अन्दर स्नान सुविधा की उपलब्धता :
+OPTION: O 2-02 के बिना अहाता
+OPTION: O 3-नहीं
+--- Extracted from page-16.jpg ---
+OPTION: O 3-एलपीजी/पीएनजी गैस कनेक्शन उपलब्ध है
+OPTION: O 5-एलपीजी/पीएनजी गैस कनेक्शन उपलब्ध है
+OPTION: O 7-खाना नहीं पकाते
+--- Extracted from page-17.jpg ---
+QUESTION: 26. रेडियो/ट्रांजिस्टर
+--- Extracted from page-18.jpg ---
+QUESTION: 27. टेलीविजन
+OPTION: O 2-अन्य डीटीएच/डिश
+OPTION: O ३-केबल कनेक्शन
+OPTION: O 4-अन्य कोई
+OPTION: O 5-नहीं
+--- Extracted from page-19.jpg ---
+QUESTION: 28. इंटरनेट सुविधा
+QUESTION: 29. लैपटॉप/कम्प्यूटर
+--- Extracted from page-20.jpg ---
+QUESTION: 30. टेलीफोन और मोबाइलफोन/स्मार्टफोन
+--- Extracted from page-21.jpg ---
+QUESTION: 37. साईकिल और स्कूटर/मोटर साईकिल/मोपेड
+OPTION: O 2-्कूटर/मोटर साईकिल/मोपेड
+QUESTION: 32. कार/जीप/वैन
+--- Extracted from page-22.jpg ---
+QUESTION: 33. परिवार द्वारा उपभोग किए जाने वाला मुख्य अनाज
+OPTION: O 3-ज्वार
+OPTION: O 4-बाजरा
+QUESTION: 34. मोबाइल नम्बर

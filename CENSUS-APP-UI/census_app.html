@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Census App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 400px; /* Mobile width */
+            background-color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Top Status Bar (Fake) */
+        .status-bar {
+            background-color: #ff9800; /* Orange color */
+            color: white;
+            font-size: 10px;
+            padding: 4px 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Header */
+        .header {
+            background-color: #ff9800;
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .header .back-btn {
+            margin-right: 12px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .header .home-btn {
+            margin-left: auto;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* Info Section */
+        .info-section {
+            padding: 12px 16px;
+            text-align: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .info-text {
+            color: #d32f2f; /* Dark red for text */
+            font-size: 12px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .line-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #757575;
+        }
+
+        /* Section Title */
+        .section-title-container {
+            padding: 16px;
+        }
+
+        .section-title {
+            border: 1px solid #000;
+            border-radius: 20px;
+            text-align: center;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* Question Section */
+        .question-section {
+            padding: 0 16px 16px 16px;
+            flex-grow: 1;
+        }
+
+        .question-text {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+
+        /* Radio Buttons */
+        .options-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .option-item {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .option-input {
+            margin-right: 12px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        /* Bottom Buttons */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-between;
+            padding: 16px;
+            background-color: white;
+        }
+
+        .nav-btn {
+            background-color: #ffcc80; /* Lighter orange */
+            border: 1px solid #e65100;
+            border-radius: 20px;
+            padding: 8px 0;
+            flex: 1;
+            margin: 0 4px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Bottom System Nav (Fake) */
+        .system-nav {
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px;
+            align-items: center;
+        }
+
+        .system-nav-icon {
+            font-size: 20px;
+            color: #757575;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <span>14:00</span>
+            <span>LTE 58%</span>
+        </div>
+
+        <!-- Header -->
+        <div class="header">
+            <span class="back-btn">&#8592;</span>
+            <span>एचएलओ डेटा</span>
+            <span class="home-btn">&#8962;</span>
+        </div>
+
+        <!-- Info Section -->
+        <div class="info-section">
+            <div class="info-text">भरने के पश्चात गोपनीय</div>
+            <div class="line-info">
+                <span>लाइन क्रमांक: 037</span>
+                <span>जनगणना मकान नम्बर: 0036</span>
+            </div>
+        </div>
+
+        <!-- Section Title -->
+        <div class="section-title-container">
+            <div class="section-title">सामग्री विवरण</div>
+        </div>
+
+        <!-- Question Section -->
+        <div class="question-section">
+            <div class="question-text">
+                4. जनगणना मकान के फर्श में प्रयुक्त प्रमुख सामग्री
+            </div>
+            <ul class="options-list">
+                <li class="option-item">
+                    <label class="option-label">
+                        <input type="radio" name="material" class="option-input">
+                        1-मिट्टी
+                    </label>
+                </li>
+                <li class="option-item">
+                    <label class="option-label">
+                        <input type="radio" name="material" class="option-input">
+                        2-लकड़ी/बांस
+                    </label>
+                </li>
+                <li class="option-item">
+                    <label class="option-label">
+                        <input type="radio" name="material" class="option-input">
+                        3-पक्की ईंट
+                    </label>
+                </li>
+                <li class="option-item">
+                    <label class="option-label">
+                        <input type="radio" name="material" class="option-input">
+                        4-पत्थर
+                    </label>
+                </li>
+                <li class="option-item">
+                    <label class="option-label">
+                        <input type="radio" name="material" class="option-input">
+                        5-सीमेंट
+                    </label>
+                </li>
+                <li class="option-item">
+                    <label class="option-label">
+                        <input type="radio" name="material" class="option-input">
+                        6-मोजेक/फर्श की टाइल
+                    </label>
+                </li>
+                <li class="option-item">
+                    <label class="option-label">
+                        <input type="radio" name="material" class="option-input">
+                        7-अन्य कोई
+                    </label>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Bottom Nav Buttons -->
+        <div class="bottom-nav">
+            <button class="nav-btn">पिछला</button>
+            <button class="nav-btn">सीधे जायें</button>
+            <button class="nav-btn">अगला</button>
+        </div>
+
+        <!-- Fake System Navigation -->
+        <div class="system-nav">
+            <span class="system-nav-icon">|||</span>
+            <span class="system-nav-icon">&#9711;</span>
+            <span class="system-nav-icon">&#10094;</span>
+        </div>
+    </div>
+
+</body>
+</html>

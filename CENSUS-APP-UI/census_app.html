@@ -22,6 +22,7 @@
             display: flex;
             flex-direction: column;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            position: relative;
         }
 
         /* Top Status Bar (Fake) */
@@ -96,6 +97,11 @@
         .question-section {
             padding: 0 16px 16px 16px;
             flex-grow: 1;
+            display: none; /* Hidden by default, JS will toggle */
+        }
+
+        .question-section.active {
+            display: block;
         }
 
         .question-text {
@@ -138,6 +144,7 @@
             justify-content: space-between;
             padding: 16px;
             background-color: white;
+            border-top: 1px solid #eee;
         }
 
         .nav-btn {
@@ -150,6 +157,13 @@
             font-size: 12px;
             font-weight: bold;
             cursor: pointer;
+        }
+
+        .nav-btn:disabled {
+            background-color: #f5f5f5;
+            border-color: #ccc;
+            color: #999;
+            cursor: not-allowed;
         }
 
         /* Bottom System Nav (Fake) */
@@ -170,6 +184,8 @@
 <body>
 
     <div class="app-container">
+        <form id="census-form" onsubmit="submitForm(event)">
+        <form id="census-form" onsubmit="submitForm(event)">
         <!-- Status Bar -->
         <div class="status-bar">
             <span>14:00</span>
@@ -197,64 +213,416 @@
             <div class="section-title">सामग्री विवरण</div>
         </div>
 
-        <!-- Question Section -->
-        <div class="question-section">
+        <!-- Screen 1: Floor -->
+        <div class="question-section active" id="screen-4">
             <div class="question-text">
                 4. जनगणना मकान के फर्श में प्रयुक्त प्रमुख सामग्री
             </div>
             <ul class="options-list">
-                <li class="option-item">
-                    <label class="option-label">
-                        <input type="radio" name="material" class="option-input">
-                        1-मिट्टी
-                    </label>
-                </li>
-                <li class="option-item">
-                    <label class="option-label">
-                        <input type="radio" name="material" class="option-input">
-                        2-लकड़ी/बांस
-                    </label>
-                </li>
-                <li class="option-item">
-                    <label class="option-label">
-                        <input type="radio" name="material" class="option-input">
-                        3-पक्की ईंट
-                    </label>
-                </li>
-                <li class="option-item">
-                    <label class="option-label">
-                        <input type="radio" name="material" class="option-input">
-                        4-पत्थर
-                    </label>
-                </li>
-                <li class="option-item">
-                    <label class="option-label">
-                        <input type="radio" name="material" class="option-input">
-                        5-सीमेंट
-                    </label>
-                </li>
-                <li class="option-item">
-                    <label class="option-label">
-                        <input type="radio" name="material" class="option-input">
-                        6-मोजेक/फर्श की टाइल
-                    </label>
-                </li>
-                <li class="option-item">
-                    <label class="option-label">
-                        <input type="radio" name="material" class="option-input">
-                        7-अन्य कोई
-                    </label>
-                </li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q4" value="1" class="option-input">1-मिट्टी</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q4" value="2" class="option-input">2-लकड़ी/बांस</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q4" value="3" class="option-input">3-पक्की ईंट</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q4" value="4" class="option-input">4-पत्थर</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q4" value="5" class="option-input">5-सीमेंट</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q4" value="6" class="option-input">6-मोजेक/फर्श की टाइल</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q4" value="7" class="option-input">7-अन्य कोई</label></li>
             </ul>
         </div>
 
-        <!-- Bottom Nav Buttons -->
-        <div class="bottom-nav">
-            <button class="nav-btn">पिछला</button>
-            <button class="nav-btn">सीधे जायें</button>
-            <button class="nav-btn">अगला</button>
+        <!-- Screen 2: Wall -->
+        <div class="question-section" id="screen-5">
+            <div class="question-text">
+                5. जनगणना मकान की दीवार में प्रयुक्त प्रमुख सामग्री
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q5" value="1" class="option-input">1-घास/फूस/बांस आदि</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q5" value="2" class="option-input">2-प्लास्टिक/पॉलिथीन</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q5" value="3" class="option-input">3-मिट्टी/कच्ची ईंट</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q5" value="4" class="option-input">4-लकड़ी</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q5" value="5" class="option-input">5-पत्थर मसाला गारा के साथ नहीं</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q5" value="6" class="option-input">6-पत्थर मसाला गारा के साथ</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q5" value="7" class="option-input">7-जी.आई./धातु/एस्बेस्टस चादरें</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q5" value="8" class="option-input">8-पक्की ईंट</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q5" value="9" class="option-input">9-कंक्रीट</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q5" value="0" class="option-input">0-अन्य कोई</label></li>
+            </ul>
         </div>
 
+        <!-- Screen 3: Roof -->
+        <div class="question-section" id="screen-6">
+            <div class="question-text">
+                6. जनगणना मकान की छत में प्रयुक्त प्रमुख सामग्री
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q6" value="1" class="option-input">1-घास/फूस/बांस/लकड़ी/मिट्टी आदि</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q6" value="2" class="option-input">2-प्लास्टिक/पॉलिथीन</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q6" value="3" class="option-input">3-हस्त निर्मित टाइल्स</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q6" value="4" class="option-input">4-मशीन निर्मित टाइल्स</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q6" value="5" class="option-input">5-पक्की ईंट</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q6" value="6" class="option-input">6-पत्थर</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q6" value="7" class="option-input">7-स्लेट</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q6" value="8" class="option-input">8-जी.आई./धातु/एस्बेस्टस चादरें</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q6" value="9" class="option-input">9-कंक्रीट</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q6" value="0" class="option-input">0-अन्य कोई</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 4: Condition -->
+        <div class="question-section" id="screen-7">
+            <div class="question-text">
+                7. जनगणना मकान की स्थिति (Condition of Census House)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q7" value="1" class="option-input">1-अच्छी (Good)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q7" value="2" class="option-input">2-रहने योग्य (Livable)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q7" value="3" class="option-input">3-जीर्ण-शीर्ण (Dilapidated)</label></li>
+            </ul>
+        </div>
+
+
+        <!-- Screen 8 -->
+        <div class="question-section" id="screen-8">
+            <div class="question-text">
+                8. जनगणना मकान से सम्बंधित प्रश्न (Question 8)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q8" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q8" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q8" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 9 -->
+        <div class="question-section" id="screen-9">
+            <div class="question-text">
+                9. जनगणना मकान से सम्बंधित प्रश्न (Question 9)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q9" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q9" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q9" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 10 -->
+        <div class="question-section" id="screen-10">
+            <div class="question-text">
+                10. जनगणना मकान से सम्बंधित प्रश्न (Question 10)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q10" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q10" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q10" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 11 -->
+        <div class="question-section" id="screen-11">
+            <div class="question-text">
+                11. जनगणना मकान से सम्बंधित प्रश्न (Question 11)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q11" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q11" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q11" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 12 -->
+        <div class="question-section" id="screen-12">
+            <div class="question-text">
+                12. जनगणना मकान से सम्बंधित प्रश्न (Question 12)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q12" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q12" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q12" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 13 -->
+        <div class="question-section" id="screen-13">
+            <div class="question-text">
+                13. जनगणना मकान से सम्बंधित प्रश्न (Question 13)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q13" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q13" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q13" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 14 -->
+        <div class="question-section" id="screen-14">
+            <div class="question-text">
+                14. जनगणना मकान से सम्बंधित प्रश्न (Question 14)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q14" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q14" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q14" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 15 -->
+        <div class="question-section" id="screen-15">
+            <div class="question-text">
+                15. जनगणना मकान से सम्बंधित प्रश्न (Question 15)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q15" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q15" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q15" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 16 -->
+        <div class="question-section" id="screen-16">
+            <div class="question-text">
+                16. जनगणना मकान से सम्बंधित प्रश्न (Question 16)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q16" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q16" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q16" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 17 -->
+        <div class="question-section" id="screen-17">
+            <div class="question-text">
+                17. जनगणना मकान से सम्बंधित प्रश्न (Question 17)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q17" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q17" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q17" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 18 -->
+        <div class="question-section" id="screen-18">
+            <div class="question-text">
+                18. जनगणना मकान से सम्बंधित प्रश्न (Question 18)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q18" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q18" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q18" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 19 -->
+        <div class="question-section" id="screen-19">
+            <div class="question-text">
+                19. जनगणना मकान से सम्बंधित प्रश्न (Question 19)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q19" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q19" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q19" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 20 -->
+        <div class="question-section" id="screen-20">
+            <div class="question-text">
+                20. जनगणना मकान से सम्बंधित प्रश्न (Question 20)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q20" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q20" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q20" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 21 -->
+        <div class="question-section" id="screen-21">
+            <div class="question-text">
+                21. जनगणना मकान से सम्बंधित प्रश्न (Question 21)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q21" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q21" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q21" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 22 -->
+        <div class="question-section" id="screen-22">
+            <div class="question-text">
+                22. जनगणना मकान से सम्बंधित प्रश्न (Question 22)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q22" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q22" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q22" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 23 -->
+        <div class="question-section" id="screen-23">
+            <div class="question-text">
+                23. जनगणना मकान से सम्बंधित प्रश्न (Question 23)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q23" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q23" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q23" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 24 -->
+        <div class="question-section" id="screen-24">
+            <div class="question-text">
+                24. जनगणना मकान से सम्बंधित प्रश्न (Question 24)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q24" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q24" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q24" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 25 -->
+        <div class="question-section" id="screen-25">
+            <div class="question-text">
+                25. जनगणना मकान से सम्बंधित प्रश्न (Question 25)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q25" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q25" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q25" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 26 -->
+        <div class="question-section" id="screen-26">
+            <div class="question-text">
+                26. जनगणना मकान से सम्बंधित प्रश्न (Question 26)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q26" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q26" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q26" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 27 -->
+        <div class="question-section" id="screen-27">
+            <div class="question-text">
+                27. जनगणना मकान से सम्बंधित प्रश्न (Question 27)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q27" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q27" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q27" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 28 -->
+        <div class="question-section" id="screen-28">
+            <div class="question-text">
+                28. जनगणना मकान से सम्बंधित प्रश्न (Question 28)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q28" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q28" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q28" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 29 -->
+        <div class="question-section" id="screen-29">
+            <div class="question-text">
+                29. जनगणना मकान से सम्बंधित प्रश्न (Question 29)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q29" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q29" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q29" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 30 -->
+        <div class="question-section" id="screen-30">
+            <div class="question-text">
+                30. जनगणना मकान से सम्बंधित प्रश्न (Question 30)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q30" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q30" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q30" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 31 -->
+        <div class="question-section" id="screen-31">
+            <div class="question-text">
+                31. जनगणना मकान से सम्बंधित प्रश्न (Question 31)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q31" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q31" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q31" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 32 -->
+        <div class="question-section" id="screen-32">
+            <div class="question-text">
+                32. जनगणना मकान से सम्बंधित प्रश्न (Question 32)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q32" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q32" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q32" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 33 -->
+        <div class="question-section" id="screen-33">
+            <div class="question-text">
+                33. जनगणना मकान से सम्बंधित प्रश्न (Question 33)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q33" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q33" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q33" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 34 -->
+        <div class="question-section" id="screen-34">
+            <div class="question-text">
+                34. जनगणना मकान से सम्बंधित प्रश्न (Question 34)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q34" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q34" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q34" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+
+        <!-- Screen 35 -->
+        <div class="question-section" id="screen-35">
+            <div class="question-text">
+                35. जनगणना मकान से सम्बंधित प्रश्न (Question 35)
+            </div>
+            <ul class="options-list">
+                <li class="option-item"><label class="option-label"><input type="radio" name="q35" value="1" class="option-input">विकल्प 1 (Option 1)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q35" value="2" class="option-input">विकल्प 2 (Option 2)</label></li>
+                <li class="option-item"><label class="option-label"><input type="radio" name="q35" value="3" class="option-input">विकल्प 3 (Option 3)</label></li>
+            </ul>
+        </div>
+        <!-- Bottom Nav Buttons -->
+        <div class="bottom-nav">
+            <button type="button" class="nav-btn" id="btn-prev" disabled>पिछला</button>
+            <button type="button" class="nav-btn" id="btn-jump">सीधे जायें</button>
+            <button type="submit" class="nav-btn" id="btn-next">अगला</button>
+        </div>
+
+        </form>
         <!-- Fake System Navigation -->
         <div class="system-nav">
             <span class="system-nav-icon">|||</span>
@@ -263,5 +631,87 @@
         </div>
     </div>
 
+    <script>
+        // Array of screen IDs in order
+        const screens = ['screen-4', 'screen-5', 'screen-6', 'screen-7', 'screen-8', 'screen-9', 'screen-10', 'screen-11', 'screen-12', 'screen-13', 'screen-14', 'screen-15', 'screen-16', 'screen-17', 'screen-18', 'screen-19', 'screen-20', 'screen-21', 'screen-22', 'screen-23', 'screen-24', 'screen-25', 'screen-26', 'screen-27', 'screen-28', 'screen-29', 'screen-30', 'screen-31', 'screen-32', 'screen-33', 'screen-34', 'screen-35'];
+        let currentIndex = 0;
+
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+        const btnJump = document.getElementById('btn-jump');
+
+        function updateUI() {
+            // Hide all screens
+            screens.forEach(id => {
+                document.getElementById(id).classList.remove('active');
+            });
+
+            // Show current screen
+            document.getElementById(screens[currentIndex]).classList.add('active');
+
+            // Update button states
+            btnPrev.disabled = (currentIndex === 0);
+
+            // Optional: change "Next" to "Submit" on last screen
+            if (currentIndex === screens.length - 1) {
+                btnNext.innerText = 'पूरा करें (Submit)';
+            } else {
+                btnNext.innerText = 'अगला';
+            }
+        }
+
+
+        function submitForm(event) {
+            event.preventDefault(); // Prevent default reload
+
+            // Add your Google Apps Script Web App URL here!
+            const scriptURL = 'YOUR_GOOGLE_WEB_APP_URL';
+            const form = document.forms['census-form'];
+            const btnSubmit = document.getElementById('btn-next');
+
+            btnSubmit.innerText = 'कृपया प्रतीक्षा करें... (Submitting)';
+            btnSubmit.disabled = true;
+
+            fetch(scriptURL, { method: 'POST', body: new FormData(form) })
+                .then(response => {
+                    alert('डेटा सफलतापूर्वक सहेज लिया गया! (Data saved successfully!)');
+                    btnSubmit.innerText = 'पूरा करें (Submit)';
+                    btnSubmit.disabled = false;
+                    // Reset form or redirect
+                })
+                .catch(error => {
+                    console.error('Error!', error.message);
+                    alert('त्रुटि! डेटा सेव नहीं हुआ। (Error saving data)');
+                    btnSubmit.innerText = 'पुनः प्रयास करें (Retry)';
+                    btnSubmit.disabled = false;
+                });
+        }
+
+        btnNext.addEventListener('click', (e) => {
+            if (currentIndex < screens.length - 1) {
+                e.preventDefault(); // Don't submit yet
+                currentIndex++;
+                updateUI();
+            } else {
+                // Let the form submit normally if it's the last screen
+                // The submitForm(event) handler will take over.
+            }
+        });
+
+
+        btnPrev.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateUI();
+            }
+        });
+
+        btnJump.addEventListener('click', () => {
+            alert('सीधे जायें (Jump to) सुविधा उपलब्ध नहीं है।');
+        });
+
+        // Initialize UI
+        updateUI();
+    </script>
 </body>
 </html>
